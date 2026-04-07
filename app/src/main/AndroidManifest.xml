@@ -12,7 +12,22 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Traveling">
         <activity
+            android:name=".TravelShare.Inscription.register_name"
+            android:exported="false"/>
+        <activity
+            android:name=".TravelShare.Inscription.register_birthdate"
+            android:exported="false"/>
+        <activity
+            android:name=".TravelShare.Inscription.register_country"
+            android:exported="false"/>
+        <activity
+            android:name=".TravelShare.Inscription.register_profil"
+            android:exported="false"/>
+        <activity
             android:name=".TravelShare.Inscription.register_success"
+            android:exported="false"/>
+        <activity
+            android:name=".TravelShare.Inscription.register_email"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
