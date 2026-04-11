@@ -1,15 +1,12 @@
 package com.example.traveling.TravelShare.Inscription
 
+import android.app.DatePickerDialog
+import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.CalendarView
 import android.widget.ImageButton
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
-import android.app.DatePickerDialog
-import android.content.Intent
 import androidx.core.view.WindowInsetsCompat
 import com.example.traveling.R
 import com.google.android.material.button.MaterialButton
@@ -20,11 +17,10 @@ import java.util.*
 class register_birthdate : AppCompatActivity() {
 
     private lateinit var etDate: TextInputEditText
-    private lateinit var calendarView: CalendarView
     private lateinit var btnContinue: MaterialButton
     private lateinit var btnBack: ImageButton
 
-    private var selectedDate: String = ""
+    private var selectedDate: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,73 +33,86 @@ class register_birthdate : AppCompatActivity() {
             insets
         }
 
-        // Initialisation
         etDate = findViewById(R.id.etDate)
         btnContinue = findViewById(R.id.btnContinue)
         btnBack = findViewById(R.id.btnBack)
         val tilDate = findViewById<TextInputLayout>(R.id.tilDate)
 
-        val showDatePicker = {
-
+        fun showDatePicker() {
             val calendar = Calendar.getInstance()
 
-            val year = calendar.get(Calendar.YEAR)
-            val month = calendar.get(Calendar.MONTH)
-            val day = calendar.get(Calendar.DAY_OF_MONTH)
+            DatePickerDialog(
+                this,
+                { _, year, month, day ->
 
-            val datePicker = DatePickerDialog(this,
-                { _, selectedYear, selectedMonth, selectedDay ->
-
-                    val date = String.format(
-                        "%02d/%02d/%d",
-                        selectedDay,
-                        selectedMonth + 1,
-                        selectedYear
-                    )
-
+                    val date = String.format("%02d/%02d/%d", day, month + 1, year)
                     etDate.setText(date)
                     selectedDate = date
-
-                }, year, month, day)
-
-            datePicker.show()
+                },
+                calendar.get(Calendar.YEAR),
+                calendar.get(Calendar.MONTH),
+                calendar.get(Calendar.DAY_OF_MONTH)
+            ).show()
         }
 
-        // clic champ
         etDate.setOnClickListener { showDatePicker() }
-
-        // clic icône
         tilDate.setEndIconOnClickListener { showDatePicker() }
 
-        // Récupérer l'email le nom et le prenom
-        val email = intent.getStringExtra("email")
-        val nom = intent.getStringExtra("nom")
-        val prenom = intent.getStringExtra("prenom")
-
-        if (email != null) {
-            Toast.makeText(this, "Email reçu : $email", Toast.LENGTH_SHORT).show()
-        }
-
-        // Bouton Continuer
         btnContinue.setOnClickListener {
-            if (selectedDate.isEmpty()) {
-                Toast.makeText(this, "Veuillez sélectionner une date", Toast.LENGTH_SHORT).show()
-            } else {
-                Toast.makeText(this, "Date sélectionnée : $selectedDate", Toast.LENGTH_SHORT).show()
 
-                val intent = Intent(this, register_country::class.java)
-                intent.putExtra("birthdate", selectedDate)
-                intent.putExtra("email", email)
-                intent.putExtra("nom", nom)
-                intent.putExtra("prenom", prenom)
+            val email = intent.getStringExtra("email")
+            val nom = intent.getStringExtra("nom")
+            val prenom = intent.getStringExtra("prenom")
+            val password = intent.getStringExtra("password")
 
-                startActivity(intent)
+            if (email.isNullOrEmpty() || nom.isNullOrEmpty() || prenom.isNullOrEmpty() || password.isNullOrEmpty()) {
+                showError("Données utilisateur manquantes")
+                return@setOnClickListener
             }
+
+            if (selectedDate.isNullOrEmpty()) {
+                showError("Veuillez sélectionner votre date de naissance")
+                return@setOnClickListener
+            }
+
+            val parts = selectedDate!!.split("/")
+            val day = parts[0].toInt()
+            val month = parts[1].toInt()
+            val year = parts[2].toInt()
+
+            val calendar = Calendar.getInstance()
+            val todayYear = calendar.get(Calendar.YEAR)
+            val todayMonth = calendar.get(Calendar.MONTH) + 1
+            val todayDay = calendar.get(Calendar.DAY_OF_MONTH)
+
+            if (year > todayYear ||
+                (year == todayYear && month > todayMonth) ||
+                (year == todayYear && month == todayMonth && day > todayDay)
+            ) {
+                showError("Date invalide : elle ne peut pas être dans le futur")
+                return@setOnClickListener
+            }
+
+            val intent = Intent(this, register_country::class.java)
+            intent.putExtra("birthdate", selectedDate)
+            intent.putExtra("email", email)
+            intent.putExtra("nom", nom)
+            intent.putExtra("prenom", prenom)
+            intent.putExtra("password", password)
+
+            startActivity(intent)
         }
 
-        //Bouton Retour
         btnBack.setOnClickListener {
             finish()
         }
+    }
+    
+    private fun showError(message: String) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Erreur")
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
     }
 }

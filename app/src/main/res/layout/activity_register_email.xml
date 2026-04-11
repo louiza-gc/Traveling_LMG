@@ -112,19 +112,27 @@
             android:background="@android:color/white"/>
     </com.google.android.material.textfield.TextInputLayout>
 
-    <!-- Mention CGU -->
-    <TextView
-        android:id="@+id/tvCgu"
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilPassword"
+        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:text="En cliquant sur continuer, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité."
-        android:textSize="12sp"
-        android:textColor="#888888"
-        android:gravity="center"
         app:layout_constraintTop_toBottomOf="@id/tilEmail"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="12dp"/>
+        android:layout_marginTop="16dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:hint="Mot de passe">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="textPassword"
+            android:textSize="15sp"
+            android:background="@android:color/white"/>
+    </com.google.android.material.textfield.TextInputLayout>
 
     <!-- Bouton Continuer -->
     <com.google.android.material.button.MaterialButton
@@ -136,47 +144,11 @@
         android:textColor="@android:color/white"
         android:backgroundTint="#1A1A1A"
         app:cornerRadius="12dp"
-        app:layout_constraintTop_toBottomOf="@id/tvCgu"
+        app:layout_constraintTop_toBottomOf="@id/tilPassword"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="24dp"
         android:layout_marginStart="16dp"
         android:layout_marginEnd="16dp"/>
-
-    <!-- Séparateur -->
-    <TextView
-        android:id="@+id/tvOr"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="ou"
-        android:textSize="14sp"
-        android:textColor="#999999"
-        app:layout_constraintTop_toBottomOf="@id/btnContinue"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="16dp"/>
-
-    <!-- Bouton Google -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnGoogle"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        android:layout_width="0dp"
-        android:layout_height="56dp"
-        android:text="Continuer avec Google"
-        android:textSize="15sp"
-        android:textColor="#1A1A1A"
-        app:icon="@drawable/ic_google"
-        app:iconGravity="start"
-        app:iconPadding="12dp"
-        app:strokeColor="#DDDDDD"
-        app:cornerRadius="12dp"
-        android:backgroundTint="#FFFFFF"
-        app:layout_constraintTop_toBottomOf="@id/tvOr"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginTop="12dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginEnd="16dp"/>
-
 
 </androidx.constraintlayout.widget.ConstraintLayout>

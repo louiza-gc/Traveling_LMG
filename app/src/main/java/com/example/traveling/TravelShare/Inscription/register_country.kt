@@ -5,7 +5,6 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.widget.ImageButton
-import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
@@ -15,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.example.traveling.R
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
+import java.util.Locale
 
 class register_country : AppCompatActivity() {
 
@@ -25,13 +25,12 @@ class register_country : AppCompatActivity() {
 
     private lateinit var adapter: CountryAdapter
 
-    private var selectedCountry: String = ""
+    private var selectedCountry: String? = null
 
-    private val countryList = listOf(
-        "France", "Algeria", "Morocco", "Tunisia", "Germany",
-        "Spain", "Italy", "United Kingdom", "United States",
-        "Canada", "Brazil", "Japan", "China", "India", "Australia"
-    )
+    private val countryList: List<String> =
+        Locale.getISOCountries().map { code ->
+            Locale("", code).displayCountry
+        }.sorted()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -44,13 +43,11 @@ class register_country : AppCompatActivity() {
             insets
         }
 
-        // Initialisation
         rvCountries = findViewById(R.id.rvCountries)
         etSearch = findViewById(R.id.etSearch)
         btnContinue = findViewById(R.id.btnContinue)
         btnBack = findViewById(R.id.btnBack)
 
-        // RecyclerView setup
         adapter = CountryAdapter(countryList.toMutableList()) { country ->
             selectedCountry = country
             etSearch.setText(country)
@@ -59,7 +56,6 @@ class register_country : AppCompatActivity() {
         rvCountries.layoutManager = LinearLayoutManager(this)
         rvCountries.adapter = adapter
 
-        // Recherche
         etSearch.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {}
 
@@ -70,27 +66,36 @@ class register_country : AppCompatActivity() {
             }
         })
 
-        // Récupérer tous les champs précédents
-        val email = intent.getStringExtra("email")
-        val nom = intent.getStringExtra("nom")
-        val prenom = intent.getStringExtra("prenom")
-        val birthdate = intent.getStringExtra("birthdate")
-
-        // Bouton Continuer
         btnContinue.setOnClickListener {
-            if (selectedCountry.isEmpty()) {
-                Toast.makeText(this, "Veuillez sélectionner un pays", Toast.LENGTH_SHORT).show()
-            } else {
 
-                val intent = Intent(this, register_profil::class.java)
-                intent.putExtra("country", selectedCountry)
-                intent.putExtra("birthdate", birthdate)
-                intent.putExtra("email", email)
-                intent.putExtra("nom", nom)
-                intent.putExtra("prenom", prenom)
+            val email = intent.getStringExtra("email")
+            val password = intent.getStringExtra("password")
+            val nom = intent.getStringExtra("nom")
+            val prenom = intent.getStringExtra("prenom")
+            val birthdate = intent.getStringExtra("birthdate")
 
-                startActivity(intent)
+            if (email.isNullOrEmpty() || password.isNullOrEmpty() ||
+                nom.isNullOrEmpty() || prenom.isNullOrEmpty() ||
+                birthdate.isNullOrEmpty()
+            ) {
+                showError("Données utilisateur manquantes")
+                return@setOnClickListener
             }
+
+            if (selectedCountry.isNullOrEmpty()) {
+                showError("Veuillez sélectionner un pays")
+                return@setOnClickListener
+            }
+
+            val nextIntent = Intent(this, register_profil::class.java)
+            nextIntent.putExtra("country", selectedCountry)
+            nextIntent.putExtra("birthdate", birthdate)
+            nextIntent.putExtra("email", email)
+            nextIntent.putExtra("nom", nom)
+            nextIntent.putExtra("prenom", prenom)
+            nextIntent.putExtra("password", password)
+
+            startActivity(nextIntent)
         }
 
         btnBack.setOnClickListener {
@@ -103,5 +108,13 @@ class register_country : AppCompatActivity() {
             it.lowercase().contains(query.lowercase())
         }
         adapter.updateList(filtered)
+    }
+
+    private fun showError(message: String) {
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Erreur")
+            .setMessage(message)
+            .setPositiveButton("OK", null)
+            .show()
     }
 }

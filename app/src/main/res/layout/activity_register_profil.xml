@@ -105,23 +105,6 @@
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp">
 
-            <TextView
-                android:id="@+id/tvCountryCode"
-                android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:text="+33"
-                android:textSize="15sp"
-                android:textColor="#1A1A1A"
-                android:gravity="center_vertical"
-                android:paddingStart="16dp"
-                android:paddingEnd="8dp"
-                android:background="@android:color/white"/>
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="match_parent"
-                android:background="#CCCCCC"/>
-
             <EditText
                 android:id="@+id/etPhone"
                 android:layout_width="0dp"
