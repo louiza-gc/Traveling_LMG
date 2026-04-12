@@ -2,6 +2,8 @@ package com.example.traveling.TravelShare.Connection
 
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
+import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
@@ -38,6 +40,20 @@ class login : AppCompatActivity() {
         val etPassword = findViewById<TextInputEditText>(R.id.etPassword)
         val btnLogin = findViewById<MaterialButton>(R.id.btnLogin)
         val tvRegisterLink = findViewById<TextView>(R.id.tvRegisterLink)
+        val progressBar = findViewById<ProgressBar>(R.id.progressBar)
+
+        val btnAnonymous = findViewById<MaterialButton>(R.id.btnAnonymous)
+
+        btnAnonymous.setOnClickListener {
+
+            val intent = Intent(this, MainActivity::class.java)
+
+            //flag pour dire "guest mode"
+            intent.putExtra("isGuest", true)
+
+            startActivity(intent)
+            finish()
+        }
 
         // login firebase
         btnLogin.setOnClickListener {
@@ -55,8 +71,14 @@ class login : AppCompatActivity() {
                 return@setOnClickListener
             }
 
+            progressBar.visibility = View.VISIBLE
+            btnLogin.isEnabled = false
+
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener { task ->
+
+                    progressBar.visibility = View.GONE
+                    btnLogin.isEnabled = true
 
                     if (task.isSuccessful) {
 
@@ -66,7 +88,7 @@ class login : AppCompatActivity() {
                         finish()
 
                     } else {
-                        showError(task.exception?.message ?: "Erreur connexion")
+                        showError("Email et/ou mot de passe incorrect(s)")
                     }
                 }
         }
