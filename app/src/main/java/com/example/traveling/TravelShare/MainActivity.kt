@@ -1,8 +1,9 @@
-package com.example.traveling
+package com.example.traveling.TravelShare
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import com.example.traveling.R
 import com.example.traveling.TravelShare.Acceuil.feed_page
 import com.example.traveling.TravelShare.Anonyme.guest_fragment
 import com.example.traveling.TravelShare.Profil.account_profile
