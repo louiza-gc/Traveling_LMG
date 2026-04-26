@@ -9,12 +9,9 @@ import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import com.example.traveling.MainActivity
+import com.example.traveling.TravelShare.MainActivity
 import com.example.traveling.R
 import com.example.traveling.TravelShare.Inscription.register_email
-import com.example.traveling.TravelShare.Profil.account_profil
-import com.example.traveling.TravelShare.Profil.account_profile
-import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.firebase.auth.FirebaseAuth
@@ -32,6 +29,15 @@ class login : AppCompatActivity() {
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
+        }
+
+        val user = FirebaseAuth.getInstance().currentUser
+
+        if (user != null) {
+            // déjà connecté → aller direct à MainActivity
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
         }
 
         auth = FirebaseAuth.getInstance()

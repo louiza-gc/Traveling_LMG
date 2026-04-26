@@ -4,9 +4,10 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import com.example.traveling.R
-import com.example.traveling.TravelShare.Acceuil.feed_page
+import com.example.traveling.TravelShare.Acceuil.page_feed
 import com.example.traveling.TravelShare.Anonyme.guest_fragment
 import com.example.traveling.TravelShare.Profil.account_profile
+import com.example.traveling.TravelShare.Publication.publication_add
 import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class MainActivity : AppCompatActivity() {
@@ -22,7 +23,7 @@ class MainActivity : AppCompatActivity() {
 
         // écran par défaut
         supportFragmentManager.beginTransaction()
-            .replace(R.id.container, feed_page())
+            .replace(R.id.container, page_feed())
             .commit()
 
         nav.setOnItemSelectedListener {
@@ -30,7 +31,7 @@ class MainActivity : AppCompatActivity() {
             when (it.itemId) {
 
                 R.id.nav_home -> {
-                    show(feed_page())
+                    show(page_feed())
                 }
 
                 R.id.nav_profile -> {
@@ -45,7 +46,7 @@ class MainActivity : AppCompatActivity() {
 
                 R.id.nav_publish -> {
                     if (isGuest) show(guest_fragment())
-                    else { /* PublishFragment */ }
+                    else show(publication_add())
                 }
 
                 R.id.nav_notifications -> {

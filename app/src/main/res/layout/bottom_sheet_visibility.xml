@@ -1,15 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/rootSheet"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:padding="16dp"
     android:background="@android:color/white">
 
-    <!-- TITRE -->
+    <!-- TITLE -->
     <TextView
-        android:id="@+id/tvTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Qui peut voir cette publication ?"
@@ -18,20 +16,32 @@
         android:textColor="@android:color/black"
         android:layout_marginBottom="12dp"/>
 
-    <!-- OPTION PUBLIC -->
-    <TextView
+    <!-- PUBLIC OPTION (ICON + TEXT SEPARATED) -->
+    <LinearLayout
         android:id="@+id/optionPublic"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="🌍 Public"
-        android:padding="14dp"
-        android:textSize="16sp"
-        android:background="?attr/selectableItemBackground"
-        android:textColor="@android:color/black"/>
+        android:layout_height="48dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="12dp"
+        android:background="?attr/selectableItemBackground">
 
-    <!-- GROUPES (DYNAMIQUE) -->
+        <ImageView
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:src="@drawable/ic_public"
+            android:contentDescription="public"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Public"
+            android:textColor="@android:color/black"
+            android:layout_marginStart="10dp"/>
+    </LinearLayout>
+
+    <!-- GROUP TITLE -->
     <TextView
-        android:id="@+id/tvGroupsTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Mes groupes"
@@ -39,6 +49,7 @@
         android:layout_marginTop="12dp"
         android:textColor="@android:color/darker_gray"/>
 
+    <!-- GROUPS -->
     <LinearLayout
         android:id="@+id/containerGroups"
         android:layout_width="match_parent"
@@ -46,7 +57,7 @@
         android:orientation="vertical"
         android:layout_marginTop="8dp"/>
 
-    <!-- BOUTON CONFIRMER -->
+    <!-- CONFIRM -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnConfirm"
         android:layout_width="match_parent"
@@ -54,7 +65,6 @@
         android:text="Confirmer"
         android:layout_marginTop="16dp"
         android:backgroundTint="#1A1A1A"
-        android:textColor="@android:color/white"
-        app:cornerRadius="10dp"/>
+        android:textColor="@android:color/white" />
 
 </LinearLayout>
