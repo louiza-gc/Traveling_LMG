@@ -10,6 +10,7 @@ import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.example.traveling.R
+import com.example.traveling.TravelPath.Accueil.AccueilPath
 import com.example.traveling.TravelShare.Connection.login
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -76,7 +77,8 @@ class account_profile : Fragment(R.layout.fragment_account_profile) {
                 when (item.itemId) {
 
                     R.id.menu_switch_travelpath -> {
-                        // TODO navigation
+                        val intent = Intent(requireContext(), AccueilPath::class.java)
+                        startActivity(intent)
                         true
                     }
 
