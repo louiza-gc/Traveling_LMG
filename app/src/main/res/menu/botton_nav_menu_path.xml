@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- Accueil TravelPath -->
+    <item
+        android:id="@+id/menu_path_home"
+        android:icon="@android:drawable/ic_menu_compass"
+        android:title="Accueil" />
+
+    <!-- Générateur de parcours -->
+    <item
+        android:id="@+id/menu_path_generate"
+        android:icon="@android:drawable/ic_menu_mapmode"
+        android:title="Parcours" />
+
+    <!-- Favoris / parcours sauvegardés -->
+    <item
+        android:id="@+id/menu_path_favorites"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="Sauvegardés" />
+
+    <!-- Profil / paramètres -->
+    <item
+        android:id="@+id/menu_path_profile"
+        android:icon="@android:drawable/ic_menu_manage"
+        android:title="Profil" />
+
+</menu>

@@ -2,10 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Permissions pour accéder à la localisation -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
-
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -15,28 +11,14 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Traveling">
-
-
-        <!--
-             TODO: Before you run your application, you need a Google Maps API key.
-
-             To get one, follow the directions here:
-
-                https://developers.google.com/maps/documentation/android-sdk/get-api-key
-
-             Once you have your API key (it starts with "AIza"), define a new property in your
-             project's local.properties file (e.g. MAPS_API_KEY=Aiza...), and replace the
-             "YOUR_API_KEY" string in this file with "${MAPS_API_KEY}".
-        -->
-        <meta-data
-            android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
-
         <activity
-            android:name=".TravelShare.Publication.ActivityLocationPicker"
+            android:name=".TravelShare.Profil.account_profil"
             android:exported="false" />
         <activity
             android:name=".TravelShare.Acceuil.page_filters"
+            android:exported="false" />
+        <activity
+            android:name=".TravelShare.Acceuil.page_feed"
             android:exported="false" />
         <activity
             android:name=".TravelShare.Inscription.register_name"
@@ -60,11 +42,12 @@
             android:name=".TravelShare.Inscription.register_email"
             android:exported="false" />
         <activity
-            android:name=".TravelShare.MainActivity"
-            android:exported="false" />
+            android:name=".MainActivity"
+            android:exported="false"/>
         <activity
             android:name=".TravelShare.Connection.login"
             android:exported="true">
+
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F4F6F8"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Préférences de visite"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#00A8A8"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Activités souhaitées"
+            android:textStyle="bold"
+            android:layout_marginTop="8dp" />
+
+        <CheckBox
+            android:id="@+id/cb_discover"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Découverte / Monuments" />
+
+        <CheckBox
+            android:id="@+id/cb_culture"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Culture / Musées" />
+
+        <CheckBox
+            android:id="@+id/cb_resto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Restauration" />
+
+        <CheckBox
+            android:id="@+id/cb_nature"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Nature / Parcs" />
+
+        <CheckBox
+            android:id="@+id/cb_nightlife"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Vie nocturne" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Budget maximum (€)"
+            android:layout_marginTop="16dp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/et_budget"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal"
+            android:hint="Ex: 50"
+            android:background="@android:drawable/edit_text"
+            android:padding="8dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Niveau d'effort maximum (1 = faible, 5 = élevé)"
+            android:layout_marginTop="16dp"
+            android:textStyle="bold" />
+
+        <SeekBar
+            android:id="@+id/seek_effort"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="5"
+            android:progress="2" />
+
+        <TextView
+            android:id="@+id/tv_effort_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Niveau sélectionné : 2"
+            android:gravity="center" />
+
+        <Button
+            android:id="@+id/btn_generate"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
+            android:layout_marginTop="24dp"
+            android:text="Générer les parcours"
+            android:backgroundTint="#00A8A8"
+            android:textColor="@android:color/white" />
+
+    </LinearLayout>
+</ScrollView>
