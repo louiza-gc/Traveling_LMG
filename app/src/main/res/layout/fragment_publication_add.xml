@@ -138,6 +138,24 @@
                     android:minLines="3"/>
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- SECTION TAGS -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏷️ Choisissez les tags"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#1A1A1A"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"/>
+
+            <!-- CHIPGROUP -->
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipGroupTags"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="10dp"/>
+
             <!-- IA BUTTON -->
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -216,13 +234,6 @@
                     android:textColor="#666666"
                     android:layout_marginStart="10dp"/>
             </LinearLayout>
-
-            <!-- TAGS -->
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupTags"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"/>
 
             <!-- SPACE -->
             <View

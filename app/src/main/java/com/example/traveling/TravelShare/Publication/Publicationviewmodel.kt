@@ -94,6 +94,9 @@ class PublicationViewModel : ViewModel() {
                     "commentsCount" to 0,
                     "sharesCount" to 0,
 
+                    "reportsCount" to 0,
+                    "isBlocked" to false,
+
                     "timestamp" to System.currentTimeMillis()
                 )
 

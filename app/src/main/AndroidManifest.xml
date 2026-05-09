@@ -52,7 +52,8 @@
             android:exported="false" />
         <activity
             android:name=".TravelShare.Acceuil.photo_post"
-            android:exported="false" />
+            android:exported="false"
+            android:windowSoftInputMode="adjustPan"/>
         <activity
             android:name=".TravelShare.Inscription.register_success"
             android:exported="false" />

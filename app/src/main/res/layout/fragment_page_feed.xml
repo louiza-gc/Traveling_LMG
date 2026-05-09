@@ -51,7 +51,6 @@
                 app:layout_constraintEnd_toEndOf="parent"
                 android:layout_marginTop="6dp"/>
 
-
             <!-- Icône menu hamburger -->
             <ImageButton
                 android:id="@+id/btnMenu"
@@ -157,6 +156,5 @@
         android:visibility="gone"
         app:layout_anchor="@id/swipeRefresh"
         app:layout_anchorGravity="center"/>
-
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

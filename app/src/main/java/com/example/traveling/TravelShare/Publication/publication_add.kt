@@ -20,6 +20,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.io.File
 import java.io.FileOutputStream
+import java.util.Date
 
 class publication_add : Fragment(R.layout.fragment_publication_add) {
 
@@ -71,6 +72,9 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
         setupObservers()
         setupListeners()
+
+        // Pour les tags
+        addPredefinedTags()
     }
 
     private fun showVisibilityDialog() {
@@ -223,7 +227,7 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
             if (lat != 0.0 && lng != 0.0) {
                 selectedLocation = address
-                tvLocationLabel.text = "📍 $address"
+                tvLocationLabel.text = "$address"
             }
         }
     }
@@ -250,5 +254,28 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
                 Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
             }
         }
+    }
+
+    private fun addPredefinedTags() {
+        // Liste des tags disponibles pour la recherche/filtre
+        val predefinedTags = listOf(
+            "Montagne", "Plage", "Culture",
+            "Gastronomie", "Coucher de soleil", "Photo",
+            "Randonnée", "Sport", "Urbain",
+            "Road trip", "Camping", "Nature",
+            "Écotourisme", "Festival", "Mer"
+        )
+
+        for (tag in predefinedTags) {
+            val chip = Chip(requireContext()).apply {
+                text = tag
+                isCheckable = true
+                isChecked = false
+                isClickable = true
+            }
+            chipGroupTags.addView(chip)
+        }
+
+        Log.d("Tags", "${predefinedTags.size} tags ajoutés au ChipGroup")
     }
 }
