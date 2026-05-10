@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-
     <!-- Permissions pour accéder à la localisation -->
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
     <application
         android:allowBackup="true"
@@ -15,8 +14,18 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Traveling">
-
-
+        <activity
+            android:name=".TravelShare.Groups.InviteMembersActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TravelShare.Groups.GroupMembersActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TravelShare.Groups.GroupDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TravelShare.Groups.CreateGroupActivity"
+            android:exported="false" />
         <!--
              TODO: Before you run your application, you need a Google Maps API key.
 
@@ -53,7 +62,7 @@
         <activity
             android:name=".TravelShare.Acceuil.photo_post"
             android:exported="false"
-            android:windowSoftInputMode="adjustPan"/>
+            android:windowSoftInputMode="adjustPan" />
         <activity
             android:name=".TravelShare.Inscription.register_success"
             android:exported="false" />
