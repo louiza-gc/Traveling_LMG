@@ -3,13 +3,19 @@ package com.example.traveling.TravelShare.Groups
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
-import android.widget.ImageView
+import android.util.Log
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+import com.bumptech.glide.Glide
 import com.example.traveling.R
+import com.example.traveling.TravelShare.Publication.publication_add
+import com.example.traveling.TravelShare.feed.FeedAdapter
+import com.example.traveling.TravelShare.feed.PublicationItem
+import com.google.android.material.button.MaterialButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import de.hdodenhof.circleimageview.CircleImageView
@@ -26,6 +32,8 @@ class GroupDetailsActivity : AppCompatActivity() {
     private lateinit var rvGroupPosts: RecyclerView
     private lateinit var tvNoPosts: TextView
     private lateinit var ivGroupPhoto: CircleImageView
+    private lateinit var feedAdapter: FeedAdapter
+    private lateinit var swipeRefreshGroup: SwipeRefreshLayout
 
     private var groupId: String = ""
     private var groupName: String = ""
@@ -40,6 +48,11 @@ class GroupDetailsActivity : AppCompatActivity() {
         setContentView(R.layout.activity_group_details)
 
         initViews()
+        swipeRefreshGroup.setOnRefreshListener {
+            loadGroupPosts()
+            loadGroupInfo()
+            swipeRefreshGroup.isRefreshing = false
+        }
         getIntentData()
         checkIfAdmin()
         loadGroupInfo()
@@ -58,8 +71,25 @@ class GroupDetailsActivity : AppCompatActivity() {
         rvGroupPosts = findViewById(R.id.rvGroupPosts)
         tvNoPosts = findViewById(R.id.tvNoPosts)
         ivGroupPhoto = findViewById(R.id.ivGroupPhoto)
+        swipeRefreshGroup = findViewById(R.id.swipeRefreshGroup)
 
         rvGroupPosts.layoutManager = LinearLayoutManager(this)
+
+        // Initialiser l'adapter
+        feedAdapter = FeedAdapter(
+            publications = emptyList(),
+            onLikeClick = { item, position ->
+                // Gérer le like plus tard
+                Toast.makeText(this, "Like: ${item.authorName}", Toast.LENGTH_SHORT).show()
+            },
+            onItemClick = { item ->
+                // Ouvrir le détail de la publication
+                val intent = Intent(this, com.example.traveling.TravelShare.Acceuil.photo_post::class.java)
+                intent.putExtra("post_id", item.id)
+                startActivity(intent)
+            }
+        )
+        rvGroupPosts.adapter = feedAdapter
     }
 
     private fun getIntentData() {
@@ -113,10 +143,11 @@ class GroupDetailsActivity : AppCompatActivity() {
             }
     }
 
+    // CHARGER LES PUBLICATIONS DU GROUPE
     private fun loadGroupPosts() {
         firestore.collection("photos")
             .whereEqualTo("groupId", groupId)
-            .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .whereEqualTo("isPublic", false)
             .get()
             .addOnSuccessListener { result ->
                 if (result.isEmpty()) {
@@ -125,7 +156,35 @@ class GroupDetailsActivity : AppCompatActivity() {
                 } else {
                     tvNoPosts.visibility = android.view.View.GONE
                     rvGroupPosts.visibility = android.view.View.VISIBLE
+
+                    val publications = mutableListOf<PublicationItem>()
+                    for (doc in result) {
+                        val data = doc.data
+                        val publication = PublicationItem(
+                            id = doc.id,
+                            authorName = data["authorName"] as? String ?: "Anonyme",
+                            authorAvatar = data["authorPhotoUrl"] as? String ?: "",
+                            location = data["locationName"] as? String ?: "",
+                            imageUrl = data["photoPath"] as? String ?: "",
+                            likesCount = (data["likesCount"] as? Long)?.toInt() ?: 0,
+                            commentsCount = (data["commentsCount"] as? Long)?.toInt() ?: 0,
+                            sharesCount = (data["sharesCount"] as? Long)?.toInt() ?: 0,
+                            isLiked = false,
+                            title = data["title"] as? String ?: "",
+                            description = data["caption"] as? String ?: "",
+                            timestamp = data["timestamp"] as? Long ?: 0
+                        )
+                        publications.add(publication)
+                    }
+
+                    // Trier par date (plus récent en premier)
+                    val sortedPublications = publications.sortedByDescending { it.timestamp }
+                    feedAdapter.updateData(sortedPublications)
                 }
+            }
+            .addOnFailureListener { e ->
+                Log.e("GroupDetails", "Erreur chargement posts: ${e.message}")
+                tvNoPosts.visibility = android.view.View.VISIBLE
             }
     }
 
@@ -153,18 +212,16 @@ class GroupDetailsActivity : AppCompatActivity() {
 
     private fun leaveGroup() {
         if (isAdmin) {
-            Toast.makeText(this, "Vous êtes admin, vous ne pouvez pas quitter, seulement supprimer le groupe", Toast.LENGTH_LONG).show()
+            Toast.makeText(this, " Vous êtes admin, vous ne pouvez pas quitter, seulement supprimer le groupe", Toast.LENGTH_LONG).show()
             return
         }
 
-        // Supprimer de la sous-collection members
         firestore.collection("groups")
             .document(groupId)
             .collection("members")
             .document(currentUserId)
             .delete()
             .addOnSuccessListener {
-                // Mettre à jour memberCount
                 firestore.collection("groups")
                     .document(groupId)
                     .update("memberCount", com.google.firebase.firestore.FieldValue.increment(-1))
@@ -193,5 +250,10 @@ class GroupDetailsActivity : AppCompatActivity() {
                         finish()
                     }
             }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadGroupPosts()
     }
 }

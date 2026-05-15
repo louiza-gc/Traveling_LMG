@@ -54,108 +54,115 @@
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="16dp"/>
 
-    <!-- ScrollView pour le contenu -->
-    <ScrollView
+    <!-- SwipeRefreshLayout pour le rafraîchissement -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshGroup"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="16dp">
+        android:layout_height="match_parent">
 
-        <LinearLayout
+        <ScrollView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="match_parent"
+            android:padding="16dp">
 
-            <!-- Description -->
-            <TextView
-                android:id="@+id/tvDescription"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Description du groupe"
-                android:textSize="14sp"
-                android:textColor="#666"
-                android:padding="12dp"
-                android:background="#FFFFFF"
-                android:visibility="gone"/>
-
-            <!-- Menu actions -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="12dp">
+                android:orientation="vertical">
+
+                <!-- Description -->
+                <TextView
+                    android:id="@+id/tvDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Description du groupe"
+                    android:textSize="14sp"
+                    android:textColor="#666"
+                    android:padding="12dp"
+                    android:background="#FFFFFF"
+                    android:visibility="gone"/>
+
+                <!-- Menu actions -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:id="@+id/tvMembers"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="👥 Voir les membres"
+                        android:gravity="center_vertical"
+                        android:paddingStart="12dp"
+                        android:background="#FFFFFF"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:id="@+id/tvInvite"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="💌 Inviter des membres"
+                        android:gravity="center_vertical"
+                        android:paddingStart="12dp"
+                        android:background="#FFFFFF"
+                        android:layout_marginBottom="4dp"/>
+
+                    <TextView
+                        android:id="@+id/tvLeaveGroup"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="🚪 Quitter le groupe"
+                        android:gravity="center_vertical"
+                        android:paddingStart="12dp"
+                        android:background="#FFFFFF"
+                        android:textColor="#D32F2F"/>
+
+                    <TextView
+                        android:id="@+id/tvDeleteGroup"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:text="🗑️ Supprimer le groupe"
+                        android:gravity="center_vertical"
+                        android:paddingStart="12dp"
+                        android:background="#FFFFFF"
+                        android:textColor="#D32F2F"
+                        android:layout_marginTop="4dp"
+                        android:visibility="gone"/>
+
+                </LinearLayout>
+
+                <!-- Liste des publications du groupe -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="📱 Publications"
+                    android:textStyle="bold"
+                    android:textSize="16sp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="12dp"/>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvGroupPosts"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"/>
 
                 <TextView
-                    android:id="@+id/tvMembers"
+                    android:id="@+id/tvNoPosts"
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="👥 Voir les membres"
-                    android:gravity="center_vertical"
-                    android:paddingStart="12dp"
-                    android:background="#FFFFFF"
-                    android:layout_marginBottom="4dp"/>
-
-                <TextView
-                    android:id="@+id/tvInvite"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="💌 Inviter des membres"
-                    android:gravity="center_vertical"
-                    android:paddingStart="12dp"
-                    android:background="#FFFFFF"
-                    android:layout_marginBottom="4dp"/>
-
-                <TextView
-                    android:id="@+id/tvLeaveGroup"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="🚪 Quitter le groupe"
-                    android:gravity="center_vertical"
-                    android:paddingStart="12dp"
-                    android:background="#FFFFFF"
-                    android:textColor="#D32F2F"/>
-
-                <TextView
-                    android:id="@+id/tvDeleteGroup"
-                    android:layout_width="match_parent"
-                    android:layout_height="48dp"
-                    android:text="🗑️ Supprimer le groupe"
-                    android:gravity="center_vertical"
-                    android:paddingStart="12dp"
-                    android:background="#FFFFFF"
-                    android:textColor="#D32F2F"
-                    android:layout_marginTop="4dp"
+                    android:layout_height="wrap_content"
+                    android:text="Aucune publication pour l'instant"
+                    android:gravity="center"
+                    android:padding="32dp"
+                    android:textColor="#888"
                     android:visibility="gone"/>
 
             </LinearLayout>
 
-            <!-- Liste des publications du groupe -->
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="📱 Publications"
-                android:textStyle="bold"
-                android:textSize="16sp"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="12dp"/>
+        </ScrollView>
 
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvGroupPosts"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:nestedScrollingEnabled="false"/>
-
-            <TextView
-                android:id="@+id/tvNoPosts"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Aucune publication pour l'instant"
-                android:gravity="center"
-                android:padding="32dp"
-                android:textColor="#888"
-                android:visibility="gone"/>
-
-        </LinearLayout>
-
-    </ScrollView>
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
 </LinearLayout>

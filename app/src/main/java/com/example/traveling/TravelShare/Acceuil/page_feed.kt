@@ -82,6 +82,11 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
 
                 for (doc in result) {
                     val data = doc.data
+                    val isPublic = data["isPublic"] as? Boolean ?: true
+
+                    // Ignorer les publications non publiques
+                    if (!isPublic) continue
+
                     val publication = PublicationItem(
                         id = doc.id,
                         authorName = data["authorName"] as? String ?: "Anonyme",
@@ -100,15 +105,13 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
                     publications.add(publication)
                 }
 
-                // Sauvegarder toutes les publications pour la recherche
                 allPublications = publications
-
                 feedAdapter.updateData(publications)
                 progressBar.visibility = View.GONE
                 swipeRefresh.isRefreshing = false
 
                 if (publications.isEmpty()) {
-                    Toast.makeText(requireContext(), "Aucune publication", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Aucune publication publique", Toast.LENGTH_SHORT).show()
                 }
             }
             .addOnFailureListener { e ->

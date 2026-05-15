@@ -20,7 +20,6 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.io.File
 import java.io.FileOutputStream
-import java.util.Date
 
 class publication_add : Fragment(R.layout.fragment_publication_add) {
 
@@ -42,6 +41,9 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
     private var selectedMediaUri: Uri? = null
     private var selectedVisibility = "public"
     private var selectedGroupId: String? = null
+
+    private val firestore = FirebaseFirestore.getInstance()
+    private val auth = FirebaseAuth.getInstance()
 
     // Sélecteur d'image
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -73,73 +75,136 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
         setupObservers()
         setupListeners()
 
+        val preSelectedGroupId = arguments?.getString("groupId")
+            ?: activity?.intent?.getStringExtra("groupId")
+        val preSelectedGroupName = arguments?.getString("groupName")
+            ?: activity?.intent?.getStringExtra("groupName")
+
+        if (!preSelectedGroupId.isNullOrEmpty()) {
+            selectedGroupId = preSelectedGroupId
+            selectedVisibility = "group"
+            if (!preSelectedGroupName.isNullOrEmpty()) {
+                tvVisibilityLabel.text = "📁 $preSelectedGroupName"
+            } else {
+                tvVisibilityLabel.text = "👥 Groupe sélectionné"
+            }
+            // Désactiver le clic sur la visibilité (optionnel)
+            tvVisibilityLabel.isEnabled = false
+            tvVisibilityLabel.alpha = 0.7f
+        }
+
+
         // Pour les tags
         addPredefinedTags()
     }
 
     private fun showVisibilityDialog() {
         val dialog = BottomSheetDialog(requireContext())
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_visibility, null)
+        val dialogView = layoutInflater.inflate(R.layout.bottom_sheet_visibility, null)
 
-        val container = view.findViewById<LinearLayout>(R.id.containerGroups)
-        val btnOk = view.findViewById<MaterialButton>(R.id.btnConfirm)
-        val optionPublic = view.findViewById<LinearLayout>(R.id.optionPublic)
+        val container = dialogView.findViewById<LinearLayout>(R.id.containerGroups)
+        val btnOk = dialogView.findViewById<MaterialButton>(R.id.btnConfirm)
+        val optionPublic = dialogView.findViewById<LinearLayout>(R.id.optionPublic)
 
         container.removeAllViews()
 
         var selectedType = "public"
         var tempSelectedGroupId: String? = null
+        val userGroups = mutableListOf<Pair<String, String>>()
 
         optionPublic.setOnClickListener {
             selectedType = "public"
             tempSelectedGroupId = null
         }
 
-        val groupMap = mutableMapOf<LinearLayout, String>()
-        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val currentUserId = auth.currentUser?.uid ?: return
 
-        FirebaseFirestore.getInstance()
-            .collection("groups")
-            .whereArrayContains("members", uid)
+        firestore.collection("groups")
             .get()
-            .addOnSuccessListener { result ->
-                for (doc in result) {
-                    val row = LinearLayout(requireContext()).apply {
-                        orientation = LinearLayout.HORIZONTAL
-                        setPadding(12, 12, 12, 12)
-                        background = resources.getDrawable(android.R.drawable.list_selector_background)
-                    }
+            .addOnSuccessListener { groupsResult ->
 
-                    val icon = ImageView(requireContext()).apply {
-                        setImageResource(R.drawable.ic_groups)
-                        layoutParams = LinearLayout.LayoutParams(60, 60)
-                    }
+                userGroups.clear()  //Nettoyer avant de remplir
 
-                    val text = TextView(requireContext()).apply {
-                        text = "👥 ${doc.getString("name")}"
-                        setPadding(20, 0, 0, 0)
-                    }
-
-                    row.addView(icon)
-                    row.addView(text)
-                    container.addView(row)
-                    groupMap[row] = doc.id
-
-                    row.setOnClickListener {
-                        selectedType = "group"
-                        tempSelectedGroupId = groupMap[row]
-                    }
+                // Pour chaque groupe, vérifier si l'utilisateur est membre
+                val pendingChecks = groupsResult.documents.map { doc ->
+                    firestore.collection("groups")
+                        .document(doc.id)
+                        .collection("members")
+                        .document(currentUserId)
+                        .get()
+                        .continueWith { task ->
+                            if (task.isSuccessful && task.result.exists()) {
+                                Pair(doc.id, doc.getString("name") ?: "Sans nom")
+                            } else {
+                                null
+                            }
+                        }
                 }
+
+                com.google.android.gms.tasks.Tasks.whenAllSuccess<Pair<String, String>?>(pendingChecks)
+                    .addOnSuccessListener { results ->
+                        for (result in results) {
+                            if (result != null) {
+                                userGroups.add(result)
+                            }
+                        }
+
+                        for ((groupId, groupName) in userGroups) {
+                            val row = LinearLayout(requireContext()).apply {
+                                orientation = LinearLayout.HORIZONTAL
+                                setPadding(12, 12, 12, 12)
+                                background = resources.getDrawable(android.R.drawable.list_selector_background)
+                            }
+
+                            val icon = ImageView(requireContext()).apply {
+                                setImageResource(R.drawable.ic_groups)
+                                layoutParams = LinearLayout.LayoutParams(60, 60)
+                            }
+
+                            val text = TextView(requireContext()).apply {
+                                text = "👥 $groupName"
+                                setPadding(20, 0, 0, 0)
+                            }
+
+                            row.addView(icon)
+                            row.addView(text)
+                            container.addView(row)
+
+                            row.setOnClickListener {
+                                selectedType = "group"
+                                tempSelectedGroupId = groupId
+                            }
+                        }
+
+                        if (userGroups.isEmpty()) {
+                            Toast.makeText(requireContext(), "Vous n'êtes dans aucun groupe", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("VisibilityDialog", "Erreur: ${e.message}")
+                Toast.makeText(requireContext(), "Erreur chargement des groupes", Toast.LENGTH_SHORT).show()
             }
 
         btnOk.setOnClickListener {
             selectedVisibility = selectedType
             selectedGroupId = tempSelectedGroupId
-            tvVisibilityLabel.text = if (selectedType == "public") "Public" else "Groupe sélectionné"
+
+            //  Afficher le nom du groupe si sélectionné
+            tvVisibilityLabel.text = if (selectedType == "public") {
+                "Public"
+            } else {
+                val groupName = userGroups.find { it.first == tempSelectedGroupId }?.second
+                if (!groupName.isNullOrEmpty()) {
+                    "$groupName"
+                } else {
+                    "Groupe sélectionné"
+                }
+            }
             dialog.dismiss()
         }
 
-        dialog.setContentView(view)
+        dialog.setContentView(dialogView)
         dialog.show()
     }
 
@@ -183,6 +248,7 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
         Log.d("Publish", "📍 Lieu: $locationName")
         Log.d("Publish", "👁️ Public: $isPublic")
         Log.d("Publish", "🏷️ Tags: $tags")
+        Log.d("Publish", "👥 Groupe ID: ${selectedGroupId ?: "aucun"}")
 
         viewModel.publishPost(
             imagePath = imagePath,
@@ -257,7 +323,6 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
     }
 
     private fun addPredefinedTags() {
-        // Liste des tags disponibles pour la recherche/filtre
         val predefinedTags = listOf(
             "Montagne", "Plage", "Culture",
             "Gastronomie", "Coucher de soleil", "Photo",

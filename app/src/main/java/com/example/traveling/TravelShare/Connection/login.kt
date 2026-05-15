@@ -35,6 +35,12 @@ class login : AppCompatActivity() {
 
         auth = FirebaseAuth.getInstance()
 
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            goToTravelShare(currentUser.uid)
+            return
+        }
+
         val etEmail = findViewById<TextInputEditText>(R.id.etEmail)
         val etPassword = findViewById<TextInputEditText>(R.id.etPassword)
         val btnLogin = findViewById<MaterialButton>(R.id.btnLogin)
@@ -42,7 +48,7 @@ class login : AppCompatActivity() {
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
         val btnAnonymous = findViewById<MaterialButton>(R.id.btnAnonymous)
 
-        // Mode invité : choix immédiat (pas d'authentification)
+        // Mode invité : choix entre TravelShare et TravelPath
         btnAnonymous.setOnClickListener {
             showChoiceDialog(isGuest = true, userId = null)
         }
@@ -82,6 +88,15 @@ class login : AppCompatActivity() {
         }
     }
 
+    private fun goToTravelShare(userId: String) {
+        val intent = Intent(this, MainActivity::class.java)
+        intent.putExtra("isGuest", false)
+        intent.putExtra("userId", userId)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
     private fun showChoiceDialog(isGuest: Boolean, userId: String?) {
         val options = arrayOf("TravelShare", "TravelPath")
         AlertDialog.Builder(this)
@@ -95,6 +110,7 @@ class login : AppCompatActivity() {
                 if (!isGuest && userId != null) {
                     intent.putExtra("userId", userId)
                 }
+                intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 startActivity(intent)
                 finish()
             }
