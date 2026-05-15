@@ -1,74 +1,112 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     android:background="#F5F0EB">
 
-    <!-- Header -->
-    <LinearLayout
+    <!-- AppBar qui se cache au scroll -->
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="20dp"
-        android:background="#FFFFFF"
-        android:elevation="2dp"
-        android:gravity="center_horizontal">
+        android:background="#F5F0EB"
+        app:elevation="0dp">
 
-        <ImageView
-            android:id="@+id/ivLogo"
-            android:layout_width="50dp"
-            android:layout_height="50dp"
-            android:src="@drawable/ic_travelshare_logo"/>
-
-        <TextView
-            android:layout_width="wrap_content"
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="TravelShare"
-            android:textSize="18sp"
-            android:textStyle="bold"
-            android:textColor="#1A73E8"
-            android:layout_marginTop="4dp"/>
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="8dp"
+            app:layout_scrollFlags="scroll|enterAlways|snap">
 
-        <TextView
-            android:id="@+id/tvGroupName"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Groupe"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:textColor="#1A1A1A"
-            android:layout_marginTop="4dp"/>
+            <!-- Logo TravelShare -->
+            <ImageView
+                android:id="@+id/ivLogo"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:src="@drawable/ic_travelshare_logo"
+                android:contentDescription="TravelShare Logo"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="24dp"
+                android:scaleType="fitCenter"/>
 
-    </LinearLayout>
+            <TextView
+                android:id="@+id/tvAppName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TravelShare"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#1A73E8"
+                app:layout_constraintTop_toBottomOf="@id/ivLogo"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="6dp"/>
 
-    <!-- Photo du groupe -->
-    <de.hdodenhof.circleimageview.CircleImageView
-        android:id="@+id/ivGroupPhoto"
-        android:layout_width="80dp"
-        android:layout_height="80dp"
-        android:src="@drawable/ic_group_default"
-        app:civ_border_width="2dp"
-        app:civ_border_color="#EEEEEE"
-        android:layout_gravity="center_horizontal"
-        android:layout_marginTop="16dp"/>
+            <!-- Nom du groupe -->
+            <TextView
+                android:id="@+id/tvGroupName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Groupe"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:textColor="#1A1A1A"
+                app:layout_constraintTop_toBottomOf="@id/tvAppName"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                android:layout_marginTop="4dp"/>
 
-    <!-- SwipeRefreshLayout pour le rafraîchissement -->
+            <!-- Icône menu -->
+            <ImageButton
+                android:id="@+id/btnMenu"
+                android:layout_width="36dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_menu"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Menu"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="@id/tvAppName"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </com.google.android.material.appbar.AppBarLayout>
+
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/swipeRefreshGroup"
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="match_parent"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <ScrollView
+        <androidx.core.widget.NestedScrollView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="16dp">
+            android:padding="16dp"
+            android:fillViewport="true">
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical">
+
+                <!-- Photo du groupe -->
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:id="@+id/ivGroupPhoto"
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:src="@drawable/ic_group_default"
+                    app:civ_border_width="2dp"
+                    app:civ_border_color="#EEEEEE"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="8dp"/>
 
                 <!-- Description -->
                 <TextView
@@ -80,6 +118,7 @@
                     android:textColor="#666"
                     android:padding="12dp"
                     android:background="#FFFFFF"
+                    android:layout_marginTop="12dp"
                     android:visibility="gone"/>
 
                 <!-- Menu actions -->
@@ -133,7 +172,7 @@
 
                 </LinearLayout>
 
-                <!-- Liste des publications du groupe -->
+                <!-- Liste des publications -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -143,11 +182,13 @@
                     android:layout_marginTop="20dp"
                     android:layout_marginBottom="12dp"/>
 
+                <!-- RecyclerView avec nestedScrollingEnabled="false" -->
                 <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/rvGroupPosts"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:nestedScrollingEnabled="false"/>
+                    android:nestedScrollingEnabled="false"
+                    tools:listitem="@layout/item_publication"/>
 
                 <TextView
                     android:id="@+id/tvNoPosts"
@@ -161,8 +202,17 @@
 
             </LinearLayout>
 
-        </ScrollView>
+        </androidx.core.widget.NestedScrollView>
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
-</LinearLayout>
+    <!-- ProgressBar -->
+    <ProgressBar
+        android:id="@+id/progressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_anchor="@id/swipeRefreshGroup"
+        app:layout_anchorGravity="center"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

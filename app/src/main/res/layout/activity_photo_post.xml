@@ -164,7 +164,8 @@
                     android:layout_height="32dp"
                     android:background="?attr/selectableItemBackgroundBorderless"
                     android:src="@drawable/ic_share"
-                    android:layout_marginStart="20dp"/>
+                    android:layout_marginStart="20dp"
+                    android:visibility="gone"/>
 
                 <TextView
                     android:id="@+id/tvShareCount"
@@ -172,7 +173,8 @@
                     android:layout_height="wrap_content"
                     android:text="0"
                     android:textSize="14sp"
-                    android:layout_marginStart="4dp"/>
+                    android:layout_marginStart="4dp"
+                    android:visibility="gone"/>
 
                 <!-- Report (Signalement) -->
                 <ImageButton

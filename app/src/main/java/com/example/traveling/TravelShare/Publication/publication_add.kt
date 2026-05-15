@@ -41,15 +41,19 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
     private var selectedMediaUri: Uri? = null
     private var selectedVisibility = "public"
     private var selectedGroupId: String? = null
+    private var selectedGroupName: String? = null
+    private var currentPostId: String = ""
+
+    private var publishObserverAttached = false
 
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    // Sélecteur d'image
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
             selectedMediaUri = it
             Glide.with(this).load(it).into(ivPreview)
+            flMediaPreview.visibility = View.VISIBLE
             Toast.makeText(requireContext(), "Image sélectionnée", Toast.LENGTH_SHORT).show()
         }
     }
@@ -59,7 +63,6 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
         viewModel = ViewModelProvider(this)[PublicationViewModel::class.java]
 
-        // Initialisation des vues
         ivPreview = view.findViewById(R.id.ivPreview)
         btnSelectImage = view.findViewById(R.id.btnSelectMultiple)
         flMediaPreview = view.findViewById(R.id.flMediaPreview)
@@ -72,9 +75,6 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
         progressBar = view.findViewById(R.id.progressBar)
         layoutAddLocation = view.findViewById(R.id.layoutAddLocation)
 
-        setupObservers()
-        setupListeners()
-
         val preSelectedGroupId = arguments?.getString("groupId")
             ?: activity?.intent?.getStringExtra("groupId")
         val preSelectedGroupName = arguments?.getString("groupName")
@@ -82,21 +82,19 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
         if (!preSelectedGroupId.isNullOrEmpty()) {
             selectedGroupId = preSelectedGroupId
+            selectedGroupName = preSelectedGroupName
             selectedVisibility = "group"
-            if (!preSelectedGroupName.isNullOrEmpty()) {
-                tvVisibilityLabel.text = "📁 $preSelectedGroupName"
-            } else {
-                tvVisibilityLabel.text = "👥 Groupe sélectionné"
-            }
-            // Désactiver le clic sur la visibilité (optionnel)
+            tvVisibilityLabel.text = "📁 ${preSelectedGroupName ?: "Groupe"}"
             tvVisibilityLabel.isEnabled = false
             tvVisibilityLabel.alpha = 0.7f
         }
 
-
-        // Pour les tags
+        setupObservers()
+        setupListeners()
         addPredefinedTags()
     }
+
+    // ==================== VISIBILITY DIALOG ====================
 
     private fun showVisibilityDialog() {
         val dialog = BottomSheetDialog(requireContext())
@@ -109,97 +107,70 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
         container.removeAllViews()
 
         var selectedType = "public"
-        var tempSelectedGroupId: String? = null
-        val userGroups = mutableListOf<Pair<String, String>>()
+        var tempGroupId: String? = null
+        var tempGroupName: String? = null
+
+        val currentUserId = auth.currentUser?.uid ?: return
 
         optionPublic.setOnClickListener {
             selectedType = "public"
-            tempSelectedGroupId = null
+            tempGroupId = null
+            tempGroupName = null
         }
-
-        val currentUserId = auth.currentUser?.uid ?: return
 
         firestore.collection("groups")
             .get()
             .addOnSuccessListener { groupsResult ->
+                for (doc in groupsResult) {
+                    val docId = doc.id
+                    val docName = doc.getString("name") ?: "Sans nom"
 
-                userGroups.clear()  //Nettoyer avant de remplir
-
-                // Pour chaque groupe, vérifier si l'utilisateur est membre
-                val pendingChecks = groupsResult.documents.map { doc ->
                     firestore.collection("groups")
-                        .document(doc.id)
+                        .document(docId)
                         .collection("members")
                         .document(currentUserId)
                         .get()
-                        .continueWith { task ->
-                            if (task.isSuccessful && task.result.exists()) {
-                                Pair(doc.id, doc.getString("name") ?: "Sans nom")
-                            } else {
-                                null
+                        .addOnSuccessListener { memberDoc ->
+                            if (memberDoc.exists() && isAdded) {
+                                val row = LinearLayout(requireContext()).apply {
+                                    orientation = LinearLayout.HORIZONTAL
+                                    setPadding(12, 12, 12, 12)
+                                    background = resources.getDrawable(android.R.drawable.list_selector_background)
+                                }
+
+                                val icon = ImageView(requireContext()).apply {
+                                    setImageResource(R.drawable.ic_groups)
+                                    layoutParams = LinearLayout.LayoutParams(60, 60)
+                                }
+
+                                val text = TextView(requireContext()).apply {
+                                    text = "👥 $docName"
+                                    setPadding(20, 0, 0, 0)
+                                }
+
+                                row.addView(icon)
+                                row.addView(text)
+                                container.addView(row)
+
+                                row.setOnClickListener {
+                                    selectedType = "group"
+                                    tempGroupId = docId
+                                    tempGroupName = docName
+                                }
                             }
                         }
                 }
-
-                com.google.android.gms.tasks.Tasks.whenAllSuccess<Pair<String, String>?>(pendingChecks)
-                    .addOnSuccessListener { results ->
-                        for (result in results) {
-                            if (result != null) {
-                                userGroups.add(result)
-                            }
-                        }
-
-                        for ((groupId, groupName) in userGroups) {
-                            val row = LinearLayout(requireContext()).apply {
-                                orientation = LinearLayout.HORIZONTAL
-                                setPadding(12, 12, 12, 12)
-                                background = resources.getDrawable(android.R.drawable.list_selector_background)
-                            }
-
-                            val icon = ImageView(requireContext()).apply {
-                                setImageResource(R.drawable.ic_groups)
-                                layoutParams = LinearLayout.LayoutParams(60, 60)
-                            }
-
-                            val text = TextView(requireContext()).apply {
-                                text = "👥 $groupName"
-                                setPadding(20, 0, 0, 0)
-                            }
-
-                            row.addView(icon)
-                            row.addView(text)
-                            container.addView(row)
-
-                            row.setOnClickListener {
-                                selectedType = "group"
-                                tempSelectedGroupId = groupId
-                            }
-                        }
-
-                        if (userGroups.isEmpty()) {
-                            Toast.makeText(requireContext(), "Vous n'êtes dans aucun groupe", Toast.LENGTH_SHORT).show()
-                        }
-                    }
-            }
-            .addOnFailureListener { e ->
-                Log.e("VisibilityDialog", "Erreur: ${e.message}")
-                Toast.makeText(requireContext(), "Erreur chargement des groupes", Toast.LENGTH_SHORT).show()
             }
 
         btnOk.setOnClickListener {
             selectedVisibility = selectedType
-            selectedGroupId = tempSelectedGroupId
+            selectedGroupId = tempGroupId
+            selectedGroupName = tempGroupName
 
-            //  Afficher le nom du groupe si sélectionné
             tvVisibilityLabel.text = if (selectedType == "public") {
                 "Public"
             } else {
-                val groupName = userGroups.find { it.first == tempSelectedGroupId }?.second
-                if (!groupName.isNullOrEmpty()) {
-                    "$groupName"
-                } else {
-                    "Groupe sélectionné"
-                }
+                tempGroupName ?: "Groupe sélectionné"
             }
             dialog.dismiss()
         }
@@ -207,6 +178,8 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
         dialog.setContentView(dialogView)
         dialog.show()
     }
+
+    // ==================== IMAGE ====================
 
     private fun saveImage(uri: Uri): String {
         val file = File(
@@ -221,34 +194,77 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
         return file.absolutePath
     }
 
+    // ==================== PUBLISH ====================
+
     private fun publishPost() {
-        val uri = selectedMediaUri
-        if (uri == null) {
+        val uri = selectedMediaUri ?: run {
             Toast.makeText(requireContext(), "Veuillez sélectionner une image", Toast.LENGTH_SHORT).show()
             return
         }
+
+        val capturedGroupId = selectedGroupId
+        val capturedGroupName = selectedGroupName
+        val capturedVisibility = selectedVisibility
 
         val imagePath = saveImage(uri)
         val title = etTitle.text.toString().trim()
         val description = etDescription.text.toString().trim()
         val locationName = tvLocationLabel.text.toString()
-        val isPublic = selectedVisibility == "public"
-
-        val tags = mutableListOf<String>()
-        for (i in 0 until chipGroupTags.childCount) {
-            val v = chipGroupTags.getChildAt(i)
-            if (v is Chip && v.isChecked) {
-                tags.add(v.text.toString())
-            }
-        }
+        val isPublic = capturedVisibility == "public"
+        val tags = getSelectedTags()
 
         Log.d("Publish", "========== PUBLICATION ==========")
         Log.d("Publish", "📸 Image: $imagePath")
         Log.d("Publish", "📝 Titre: $title")
         Log.d("Publish", "📍 Lieu: $locationName")
-        Log.d("Publish", "👁️ Public: $isPublic")
+        Log.d("Publish", "👁️ Visibilité: $capturedVisibility")
         Log.d("Publish", "🏷️ Tags: $tags")
-        Log.d("Publish", "👥 Groupe ID: ${selectedGroupId ?: "aucun"}")
+        Log.d("Publish", "👥 Groupe ID: ${capturedGroupId ?: "aucun"}")
+
+        if (!publishObserverAttached) {
+            publishObserverAttached = true
+            viewModel.publishSuccess.observe(viewLifecycleOwner) { success ->
+                if (success == true) {
+                    val currentUserId = auth.currentUser?.uid ?: return@observe
+
+                    firestore.collection("users")
+                        .document(currentUserId)
+                        .get()
+                        .addOnSuccessListener { userDoc ->
+                            val senderName = userDoc.getString("pseudo")
+                                ?: userDoc.getString("fullName")
+                                ?: "Quelqu'un"
+
+                            firestore.collection("photos")
+                                .whereEqualTo("authorId", currentUserId)
+                                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                                .limit(1)
+                                .get()
+                                .addOnSuccessListener { result ->
+                                    val postDoc = result.documents.firstOrNull()
+                                    if (postDoc != null) {
+                                        currentPostId = postDoc.id
+
+                                        if (capturedVisibility == "group" && capturedGroupId != null) {
+                                            sendGroupPostNotification(capturedGroupId, capturedGroupName, currentPostId, senderName)
+                                        }
+
+                                        if (locationName.isNotEmpty() && locationName != "Ajouter un lieu") {
+                                            sendLocationBasedNotification(locationName, currentPostId, senderName)
+                                        }
+
+                                        if (tags.isNotEmpty()) {
+                                            sendTagBasedNotification(tags, currentPostId, senderName)
+                                        }
+                                    }
+                                }
+                        }
+
+                    Toast.makeText(requireContext(), "Publié avec succès !", Toast.LENGTH_SHORT).show()
+                    parentFragmentManager.popBackStack()
+                }
+            }
+        }
 
         viewModel.publishPost(
             imagePath = imagePath,
@@ -256,32 +272,55 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
             description = description,
             locationName = locationName,
             isPublic = isPublic,
-            groupId = selectedGroupId ?: "",
+            groupId = capturedGroupId ?: "",
             tags = tags
         )
     }
 
-    private fun setupListeners() {
-        btnPublish.setOnClickListener {
-            publishPost()
-        }
+    // ==================== TAGS ====================
 
-        btnSelectImage.setOnClickListener {
-            pickImage.launch("image/*")
+    private fun getSelectedTags(): List<String> {
+        val tags = mutableListOf<String>()
+        for (i in 0 until chipGroupTags.childCount) {
+            val v = chipGroupTags.getChildAt(i)
+            if (v is Chip && v.isChecked) tags.add(v.text.toString())
         }
-
-        flMediaPreview.setOnClickListener {
-            pickImage.launch("image/*")
-        }
-
-        tvVisibilityLabel.setOnClickListener {
-            showVisibilityDialog()
-        }
-
-        layoutAddLocation.setOnClickListener {
-            openMapsForLocation()
-        }
+        return tags
     }
+
+    private fun addPredefinedTags() {
+        val predefinedTags = listOf(
+            "Montagne", "Plage", "Culture",
+            "Gastronomie", "Coucher de soleil", "Photo",
+            "Randonnée", "Sport", "Urbain",
+            "Road trip", "Camping", "Nature",
+            "Écotourisme", "Festival", "Mer"
+        )
+        for (tag in predefinedTags) {
+            val chip = Chip(requireContext()).apply {
+                text = tag
+                isCheckable = true
+                isChecked = false
+                isClickable = true
+            }
+            chipGroupTags.addView(chip)
+        }
+        Log.d("Tags", "${predefinedTags.size} tags ajoutés")
+    }
+
+    // ==================== LISTENERS ====================
+
+    private fun setupListeners() {
+        btnPublish.setOnClickListener { publishPost() }
+        btnSelectImage.setOnClickListener { pickImage.launch("image/*") }
+        flMediaPreview.setOnClickListener { pickImage.launch("image/*") }
+        tvVisibilityLabel.setOnClickListener {
+            if (selectedGroupId == null) showVisibilityDialog()
+        }
+        layoutAddLocation.setOnClickListener { openMapsForLocation() }
+    }
+
+    // ==================== LOCATION ====================
 
     private val locationPickerLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
@@ -293,7 +332,7 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
             if (lat != 0.0 && lng != 0.0) {
                 selectedLocation = address
-                tvLocationLabel.text = "$address"
+                tvLocationLabel.text = address
             }
         }
     }
@@ -303,44 +342,135 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
         locationPickerLauncher.launch(intent)
     }
 
+    // ==================== OBSERVERS ====================
+
     private fun setupObservers() {
-        viewModel.isLoading.observe(viewLifecycleOwner) {
-            progressBar.visibility = if (it) View.VISIBLE else View.GONE
+        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
+            progressBar.visibility = if (loading) View.VISIBLE else View.GONE
+            btnPublish.isEnabled = !loading
         }
 
-        viewModel.publishSuccess.observe(viewLifecycleOwner) {
-            if (it == true) {
-                Toast.makeText(requireContext(), "Publié avec succès !", Toast.LENGTH_SHORT).show()
-                parentFragmentManager.popBackStack()
-            }
-        }
-
-        viewModel.error.observe(viewLifecycleOwner) {
-            it?.let {
+        viewModel.error.observe(viewLifecycleOwner) { error ->
+            error?.let {
                 Toast.makeText(requireContext(), it, Toast.LENGTH_LONG).show()
             }
         }
     }
 
-    private fun addPredefinedTags() {
-        val predefinedTags = listOf(
-            "Montagne", "Plage", "Culture",
-            "Gastronomie", "Coucher de soleil", "Photo",
-            "Randonnée", "Sport", "Urbain",
-            "Road trip", "Camping", "Nature",
-            "Écotourisme", "Festival", "Mer"
-        )
+    // ==================== NOTIFICATIONS ====================
 
-        for (tag in predefinedTags) {
-            val chip = Chip(requireContext()).apply {
-                text = tag
-                isCheckable = true
-                isChecked = false
-                isClickable = true
+    private fun sendGroupPostNotification(groupId: String, groupName: String?, postId: String, senderName: String) {
+        val currentUserId = auth.currentUser?.uid ?: return
+        val groupNameValue = groupName ?: "le groupe"
+
+        Log.d("NOTIF_GROUP", "=== sendGroupPostNotification ===")
+        Log.d("NOTIF_GROUP", "groupId=$groupId | groupName=$groupNameValue | postId=$postId | senderName=$senderName")
+
+        firestore.collection("groups")
+            .document(groupId)
+            .collection("members")
+            .get()
+            .addOnSuccessListener { members ->
+                for (memberDoc in members) {
+                    val memberId = memberDoc.id
+                    if (memberId == currentUserId) continue
+
+                    val notificationData = hashMapOf(
+                        "type" to "new_post_in_group",
+                        "title" to "📷 Nouvelle publication dans le groupe",
+                        "message" to "$senderName a publié dans $groupNameValue",
+                        "groupId" to groupId,
+                        "groupName" to groupNameValue,
+                        "postId" to postId,
+                        "senderId" to currentUserId,
+                        "senderName" to senderName,
+                        "isRead" to false,
+                        "status" to "active",
+                        "timestamp" to System.currentTimeMillis()
+                    )
+
+                    firestore.collection("users")
+                        .document(memberId)
+                        .collection("notifications")
+                        .add(notificationData)
+                }
             }
-            chipGroupTags.addView(chip)
-        }
+    }
 
-        Log.d("Tags", "${predefinedTags.size} tags ajoutés au ChipGroup")
+    private fun sendLocationBasedNotification(locationName: String, postId: String, senderName: String) {
+        val currentUserId = auth.currentUser?.uid ?: return
+
+        Log.d("NOTIF_LOCATION", "=== sendLocationBasedNotification ===")
+        Log.d("NOTIF_LOCATION", "lieu: $locationName | postId: $postId")
+
+        firestore.collection("users")
+            .get()
+            .addOnSuccessListener { users ->
+                for (userDoc in users) {
+                    val userId = userDoc.id
+                    if (userId == currentUserId) continue
+
+                    val followedLocations = userDoc.get("followedLocations") as? List<String> ?: emptyList()
+
+                    if (followedLocations.any { locationName.contains(it, ignoreCase = true) }) {
+                        val notificationData = hashMapOf(
+                            "type" to "new_post_in_location",
+                            "title" to "📍 Nouvelle photo à $locationName",
+                            "message" to "$senderName a publié une photo à $locationName",
+                            "postId" to postId,
+                            "locationName" to locationName,
+                            "senderId" to currentUserId,
+                            "senderName" to senderName,
+                            "isRead" to false,
+                            "status" to "active",
+                            "timestamp" to System.currentTimeMillis()
+                        )
+
+                        firestore.collection("users")
+                            .document(userId)
+                            .collection("notifications")
+                            .add(notificationData)
+                    }
+                }
+            }
+    }
+
+    private fun sendTagBasedNotification(tags: List<String>, postId: String, senderName: String) {
+        val currentUserId = auth.currentUser?.uid ?: return
+
+        Log.d("NOTIF_TAG", "=== sendTagBasedNotification ===")
+        Log.d("NOTIF_TAG", "tags: $tags | postId: $postId")
+
+        firestore.collection("users")
+            .get()
+            .addOnSuccessListener { users ->
+                for (userDoc in users) {
+                    val userId = userDoc.id
+                    if (userId == currentUserId) continue
+
+                    val followedTags = userDoc.get("followedTags") as? List<String> ?: emptyList()
+                    val matchingTags = tags.filter { it in followedTags }
+
+                    if (matchingTags.isNotEmpty()) {
+                        val notificationData = hashMapOf(
+                            "type" to "new_post_in_tag",
+                            "title" to "🏷️ Nouvelle photo sur ${matchingTags.first()}",
+                            "message" to "$senderName a publié une photo sur ${matchingTags.joinToString(", ")}",
+                            "postId" to postId,
+                            "tags" to matchingTags,
+                            "senderId" to currentUserId,
+                            "senderName" to senderName,
+                            "isRead" to false,
+                            "status" to "active",
+                            "timestamp" to System.currentTimeMillis()
+                        )
+
+                        firestore.collection("users")
+                            .document(userId)
+                            .collection("notifications")
+                            .add(notificationData)
+                    }
+                }
+            }
     }
 }

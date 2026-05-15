@@ -1,5 +1,6 @@
 package com.example.traveling.TravelShare.feed
 
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -32,6 +33,14 @@ class FeedAdapter(
     private val onItemClick: (PublicationItem) -> Unit
 ) : RecyclerView.Adapter<FeedAdapter.ViewHolder>() {
 
+    override fun getItemId(position: Int): Long {
+        return publications[position].id.hashCode().toLong()
+    }
+
+    override fun getItemViewType(position: Int): Int {
+        return position
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_publication, parent, false)
@@ -48,8 +57,9 @@ class FeedAdapter(
     override fun getItemCount() = publications.size
 
     fun updateData(newPublications: List<PublicationItem>) {
-        publications = newPublications
+        publications = newPublications.toList()  // Force une nouvelle liste
         notifyDataSetChanged()
+        Log.d("FeedAdapter", "updateData: ${publications.size} publications")
     }
 
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {

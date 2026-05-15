@@ -7,6 +7,7 @@ import com.example.traveling.R
 import com.example.traveling.TravelShare.Acceuil.page_feed
 import com.example.traveling.TravelShare.Anonyme.guest_fragment
 import com.example.traveling.TravelShare.Groups.GroupsFragment
+import com.example.traveling.TravelShare.Notification.NotificationsFragment
 import com.example.traveling.TravelShare.Profil.account_profile
 import com.example.traveling.TravelShare.Publication.publication_add
 import com.google.android.material.bottomnavigation.BottomNavigationView
@@ -52,7 +53,7 @@ class MainActivity : AppCompatActivity() {
 
                 R.id.nav_notifications -> {
                     if (isGuest) show(guest_fragment())
-                    else { /* NotificationsFragment */ }
+                    else show(NotificationsFragment())
                 }
             }
 

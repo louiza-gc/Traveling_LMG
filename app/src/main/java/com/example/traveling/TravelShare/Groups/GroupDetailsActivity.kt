@@ -192,12 +192,14 @@ class GroupDetailsActivity : AppCompatActivity() {
         tvMembers.setOnClickListener {
             val intent = Intent(this, GroupMembersActivity::class.java)
             intent.putExtra("group_id", groupId)
+            intent.putExtra("group_name", groupName)
             startActivity(intent)
         }
 
         tvInvite.setOnClickListener {
             val intent = Intent(this, InviteMembersActivity::class.java)
             intent.putExtra("group_id", groupId)
+            intent.putExtra("group_name", groupName)
             startActivity(intent)
         }
 

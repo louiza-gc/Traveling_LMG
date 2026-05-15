@@ -60,13 +60,13 @@
 
         </LinearLayout>
 
-        <!-- Image de la publication -->
         <ImageView
             android:id="@+id/ivPostImage"
             android:layout_width="match_parent"
-            android:layout_height="280dp"
+            android:layout_height="200dp"
             android:scaleType="centerCrop"
-            android:src="@drawable/placeholder_photo"/>
+            android:src="@drawable/placeholder_photo"
+            android:layout_marginTop="8dp"/>
 
         <!-- Actions: Like, Comment, Share -->
         <LinearLayout
@@ -138,7 +138,8 @@
                 android:orientation="horizontal"
                 android:gravity="center_vertical"
                 android:clickable="true"
-                android:focusable="true">
+                android:focusable="true"
+                android:visibility="gone">
 
                 <ImageView
                     android:id="@+id/ivShare"

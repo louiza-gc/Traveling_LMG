@@ -1,6 +1,7 @@
 package com.example.traveling.TravelShare.Groups
 
 import android.os.Bundle
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.Toast
@@ -20,6 +21,9 @@ class InviteMembersActivity : AppCompatActivity() {
     private val usersList = mutableListOf<UserItem>()
 
     private var groupId: String = ""
+    private var groupName: String = ""
+    private var currentUserName: String = ""
+
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private val currentUserId = auth.currentUser?.uid ?: ""
@@ -33,12 +37,27 @@ class InviteMembersActivity : AppCompatActivity() {
         rvUsers = findViewById(R.id.rvUsers)
 
         groupId = intent.getStringExtra("group_id") ?: ""
+        groupName = intent.getStringExtra("group_name") ?: ""
 
         rvUsers.layoutManager = LinearLayoutManager(this)
+
+        // Récupérer le nom de l'utilisateur courant
+        fetchCurrentUserName()
 
         btnSearchUser.setOnClickListener {
             searchUsers()
         }
+    }
+
+    private fun fetchCurrentUserName() {
+        firestore.collection("users")
+            .document(currentUserId)
+            .get()
+            .addOnSuccessListener { doc ->
+                currentUserName = doc.getString("pseudo")
+                    ?: doc.getString("fullName")
+                            ?: "Utilisateur"
+            }
     }
 
     private fun searchUsers() {
@@ -101,12 +120,41 @@ class InviteMembersActivity : AppCompatActivity() {
         firestore.collection("group_invitations")
             .add(invitationData)
             .addOnSuccessListener {
+                // Envoyer la notification à l'utilisateur invité
+                sendInvitationNotification(user)
+
                 Toast.makeText(this, "💌 Invitation envoyée à ${user.name}", Toast.LENGTH_SHORT).show()
                 usersList.remove(user)
                 userAdapter.notifyDataSetChanged()
             }
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun sendInvitationNotification(user: UserItem) {
+        val notificationData = hashMapOf(
+            "type" to "group_invitation",
+            "title" to "💌 Invitation à rejoindre un groupe",
+            "message" to "$currentUserName vous a invité à rejoindre le groupe '$groupName'",
+            "groupId" to groupId,
+            "groupName" to groupName,
+            "senderId" to currentUserId,
+            "senderName" to currentUserName,
+            "isRead" to false,
+            "status" to "pending",
+            "timestamp" to System.currentTimeMillis()
+        )
+
+        firestore.collection("users")
+            .document(user.userId)
+            .collection("notifications")
+            .add(notificationData)
+            .addOnSuccessListener {
+                Log.d("Invite", "Notification envoyée à ${user.name}")
+            }
+            .addOnFailureListener { e ->
+                Log.e("Invite", "Erreur notification: ${e.message}")
             }
     }
 }
