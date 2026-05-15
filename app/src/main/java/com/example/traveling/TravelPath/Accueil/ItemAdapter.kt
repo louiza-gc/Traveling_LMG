@@ -3,6 +3,7 @@ package com.example.traveling.TravelPath.Accueil
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -11,14 +12,18 @@ import com.example.traveling.R
 
 class ItemAdapter(
     private val items: List<Item>,
-    private val onItemClick: (Item) -> Unit
+    private val onItemClick: (Item) -> Unit,
+    private val onFavoriteClick: (Item) -> Unit,
+    private val onAddClick: (Item) -> Unit
 ) : RecyclerView.Adapter<ItemAdapter.ViewHolder>() {
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val image: ImageView = view.findViewById(R.id.image)
-        val title: TextView = view.findViewById(R.id.title)
-        val city: TextView = view.findViewById(R.id.city)
-        val country: TextView = view.findViewById(R.id.country)
+    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        val image: ImageView = itemView.findViewById(R.id.image)
+        val title: TextView = itemView.findViewById(R.id.title)
+        val city: TextView = itemView.findViewById(R.id.city)
+        val country: TextView = itemView.findViewById(R.id.country)
+        val btnFavorite: ImageButton = itemView.findViewById(R.id.btn_favorite)
+        val btnAdd: ImageButton = itemView.findViewById(R.id.btn_add_to_list)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -33,6 +38,7 @@ class ItemAdapter(
         holder.city.text = item.city
         holder.country.text = item.country
 
+        // Image
         if (item.imageUrl.isNotBlank()) {
             Glide.with(holder.itemView.context)
                 .load(item.imageUrl)
@@ -43,7 +49,19 @@ class ItemAdapter(
             holder.image.setImageResource(android.R.drawable.ic_menu_gallery)
         }
 
+        // Icône favori (cœur vide ou plein)
+        val favoriteRes = if (item.isFavorite) R.drawable.ic_favorite_filled else R.drawable.ic_favorite_border
+        holder.btnFavorite.setImageResource(favoriteRes)
+
+        // Clics
         holder.itemView.setOnClickListener { onItemClick(item) }
+        holder.btnFavorite.setOnClickListener {
+            onFavoriteClick(item)
+            // Mise à jour locale immédiate de l'état
+            item.isFavorite = !item.isFavorite
+            notifyItemChanged(position)
+        }
+        holder.btnAdd.setOnClickListener { onAddClick(item) }
     }
 
     override fun getItemCount() = items.size

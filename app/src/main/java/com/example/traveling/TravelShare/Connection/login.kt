@@ -6,11 +6,13 @@ import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.traveling.TravelShare.MainActivity
 import com.example.traveling.R
+import com.example.traveling.TravelPath.Accueil.AccueilPath
 import com.example.traveling.TravelShare.Inscription.register_email
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
@@ -31,15 +33,6 @@ class login : AppCompatActivity() {
             insets
         }
 
-        val user = FirebaseAuth.getInstance().currentUser
-
-        if (user != null) {
-            // déjà connecté → aller direct à MainActivity
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-            return
-        }
-
         auth = FirebaseAuth.getInstance()
 
         val etEmail = findViewById<TextInputEditText>(R.id.etEmail)
@@ -47,31 +40,22 @@ class login : AppCompatActivity() {
         val btnLogin = findViewById<MaterialButton>(R.id.btnLogin)
         val tvRegisterLink = findViewById<TextView>(R.id.tvRegisterLink)
         val progressBar = findViewById<ProgressBar>(R.id.progressBar)
-
         val btnAnonymous = findViewById<MaterialButton>(R.id.btnAnonymous)
 
+        // Mode invité : choix immédiat (pas d'authentification)
         btnAnonymous.setOnClickListener {
-
-            val intent = Intent(this, MainActivity::class.java)
-
-            //flag pour dire "guest mode"
-            intent.putExtra("isGuest", true)
-
-            startActivity(intent)
-            finish()
+            showChoiceDialog(isGuest = true, userId = null)
         }
 
-        // login firebase
+        // Connexion classique
         btnLogin.setOnClickListener {
-
             val email = etEmail.text.toString().trim()
             val password = etPassword.text.toString().trim()
 
             if (email.isEmpty()) {
-               showError("Email obligatoire")
+                showError("Email obligatoire")
                 return@setOnClickListener
             }
-
             if (password.isEmpty()) {
                 showError("Mot de passe obligatoire")
                 return@setOnClickListener
@@ -82,17 +66,11 @@ class login : AppCompatActivity() {
 
             auth.signInWithEmailAndPassword(email, password)
                 .addOnCompleteListener { task ->
-
                     progressBar.visibility = View.GONE
                     btnLogin.isEnabled = true
-
                     if (task.isSuccessful) {
-
-                        // aller au profil
-                        val intent = Intent(this, MainActivity::class.java)
-                        startActivity(intent)
-                        finish()
-
+                        val uid = auth.currentUser?.uid ?: ""
+                        showChoiceDialog(isGuest = false, userId = uid)
                     } else {
                         showError("Email et/ou mot de passe incorrect(s)")
                     }
@@ -100,13 +78,32 @@ class login : AppCompatActivity() {
         }
 
         tvRegisterLink.setOnClickListener {
-            val intent = Intent(this, register_email::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, register_email::class.java))
         }
     }
 
+    private fun showChoiceDialog(isGuest: Boolean, userId: String?) {
+        val options = arrayOf("TravelShare", "TravelPath")
+        AlertDialog.Builder(this)
+            .setTitle("Choisissez votre application")
+            .setItems(options) { _, which ->
+                val intent = when (which) {
+                    0 -> Intent(this, MainActivity::class.java)
+                    else -> Intent(this, AccueilPath::class.java)
+                }
+                intent.putExtra("isGuest", isGuest)
+                if (!isGuest && userId != null) {
+                    intent.putExtra("userId", userId)
+                }
+                startActivity(intent)
+                finish()
+            }
+            .setCancelable(false)
+            .show()
+    }
+
     private fun showError(message: String) {
-        androidx.appcompat.app.AlertDialog.Builder(this)
+        AlertDialog.Builder(this)
             .setTitle("Erreur")
             .setMessage(message)
             .setPositiveButton("OK", null)

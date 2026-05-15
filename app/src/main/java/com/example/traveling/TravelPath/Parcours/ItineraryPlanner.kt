@@ -1,5 +1,6 @@
-package com.example.traveling.TravelPath.Accueil
+package com.example.traveling.TravelPath.Parcours
 
+import com.example.traveling.TravelPath.Accueil.Place
 import kotlin.math.*
 
 object ItineraryPlanner {
@@ -10,21 +11,18 @@ object ItineraryPlanner {
                     place.details.costEstimate.adult <= prefs.budgetMax &&
                     place.details.effortLevel <= prefs.effortMax
         }
-
         if (candidates.isEmpty()) return emptyList()
-
         val economic = candidates.sortedBy { it.details.costEstimate.adult }
         val balanced = candidates.sortedBy { it.details.effortLevel }
         val comfort = candidates.shuffled()
-
         return listOf(
-            buildItinerary("Économique", "Parcours low-cost", economic.take(4), prefs),
-            buildItinerary("Équilibré", "Compromis coût/effort", balanced.take(4), prefs),
-            buildItinerary("Confort", "Parcours premium", comfort.take(4), prefs)
+            buildItinerary("Économique", "Parcours low-cost", economic.take(4)),
+            buildItinerary("Équilibré", "Compromis coût/effort", balanced.take(4)),
+            buildItinerary("Confort", "Parcours premium", comfort.take(4))
         )
     }
 
-    private fun buildItinerary(name: String, desc: String, selected: List<Place>, prefs: UserPreferences): Itinerary {
+    private fun buildItinerary(name: String, desc: String, selected: List<Place>): Itinerary {
         var totalCost = 0.0
         var totalDuration = 0
         var totalEffort = 0
@@ -42,31 +40,30 @@ object ItineraryPlanner {
             val distance = if (previousLatLon == null) 0.0
             else distanceInKm(previousLatLon.first, previousLatLon.second, place.location.lat, place.location.lon)
 
-            steps.add(Step(
-                order = index + 1,
-                placeId = place.id,
-                arrivalTime = String.format("%02d:%02d", currentTime, 0),
-                departureTime = String.format("%02d:%02d", currentTime + duration / 60, duration % 60),
-                durationMinutes = duration,
-                cost = cost,
-                effort = place.details.effortLevel,
-                distanceFromPreviousKm = distance
-            ))
+            steps.add(
+                Step(
+                    order = index + 1,
+                    placeId = place.id,
+                    arrivalTime = String.format("%02d:%02d", currentTime, 0),
+                    departureTime = String.format("%02d:%02d", currentTime + duration / 60, duration % 60),
+                    durationMinutes = duration,
+                    cost = cost,
+                    effort = place.details.effortLevel,
+                    distanceFromPreviousKm = distance
+                )
+            )
             currentTime += duration / 60
             previousLatLon = Pair(place.location.lat, place.location.lon)
         }
 
         val avgEffort = if (selected.isNotEmpty()) totalEffort.toDouble() / selected.size else 0.0
-
         return Itinerary(
             name = name,
             description = desc,
             totalCost = totalCost,
             totalDurationMinutes = totalDuration,
             averageEffort = avgEffort,
-            steps = steps,
-            weatherAlerts = emptyList(),
-            openingHoursConflicts = emptyList()
+            steps = steps
         )
     }
 

@@ -5,11 +5,15 @@
     "category": "Monuments",
     "subcategory": "découverte",
     "location": { "lat": 48.8588897, "lon": 2.2943506, "city": "Paris", "country": "France", "address": "Champ de Mars" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg", "images": [], "videos": [] },
-    "details": { "description": "La tour emblématique de Paris.", "opening_hours": { "monday": "09:30-23:45", "tuesday": "09:30-23:45", "wednesday": "09:30-23:45", "thursday": "09:30-23:45", "friday": "09:30-23:45", "saturday": "09:30-23:45", "sunday": "09:30-23:45" }, "typical_duration_minutes": 90, "cost_estimate": { "adult": 17.5, "child": 8, "currency": "EUR", "price_category": "$$" }, "effort_level": 2, "tags": ["vue", "ascenseur"] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/85/Tour_Eiffel_2014.jpg/500px-Tour_Eiffel_2014.jpg",
+      "images": [],
+      "videos": []
+    },
+    "details": { "description": "La tour emblématique de Paris.", "opening_hours": { "monday": "09:30-23:45", "tuesday": "09:30-23:45", "wednesday": "09:30-23:45", "thursday": "09:30-23:45", "friday": "09:30-23:45", "saturday": "09:30-23:45", "sunday": "09:30-23:45" }, "typical_duration_minutes": 120, "cost_estimate": { "adult": 18.10, "child": 9.0, "currency": "EUR", "price_category": "$$" }, "effort_level": 2, "tags": ["vue", "ascenseur"] },
     "indoor_outdoor": "outdoor",
     "activities": ["découverte", "culture"],
-    "sensitivity": { "cold": false, "heat": true, "humidity": false }
+    "sensitivity": { "cold": true, "heat": true, "humidity": true }
   },
   {
     "id": "louvre_museum",
@@ -17,11 +21,15 @@
     "category": "Musées",
     "subcategory": "art",
     "location": { "lat": 48.8606111, "lon": 2.337644, "city": "Paris", "country": "France", "address": "Rue de Rivoli" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/6/66/Louvre_Museum_Wikimedia_Commons.jpg", "images": [], "videos": [] },
-    "details": { "description": "Plus grand musée du monde.", "opening_hours": { "monday": "09:00-18:00", "tuesday": "closed", "wednesday": "09:00-21:45", "thursday": "09:00-18:00", "friday": "09:00-21:45", "saturday": "09:00-18:00", "sunday": "09:00-18:00" }, "typical_duration_minutes": 180, "cost_estimate": { "adult": 17, "child": 0, "currency": "EUR", "price_category": "$$" }, "effort_level": 3, "tags": ["mona lisa", "foule"] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Louvre_Museum_Wikimedia_Commons.jpg/500px-Louvre_Museum_Wikimedia_Commons.jpg",
+      "images": [],
+      "videos": []
+    },
+    "details": { "description": "Plus grand musée du monde.", "opening_hours": { "monday": "09:00-18:00", "tuesday": "closed", "wednesday": "09:00-21:00", "thursday": "09:00-18:00", "friday": "09:00-21:00", "saturday": "09:00-18:00", "sunday": "09:00-18:00" }, "typical_duration_minutes": 180, "cost_estimate": { "adult": 17, "child": 0, "currency": "EUR", "price_category": "$$" }, "effort_level": 3, "tags": ["mona lisa", "foule"] },
     "indoor_outdoor": "indoor",
     "activities": ["culture"],
-    "sensitivity": { "cold": false, "heat": true, "humidity": false }
+    "sensitivity": { "cold": false, "heat": false, "humidity": false }
   },
   {
     "id": "notre_dame",
@@ -29,11 +37,15 @@
     "category": "Monuments",
     "subcategory": "religieux",
     "location": { "lat": 48.852968, "lon": 2.349902, "city": "Paris", "country": "France", "address": "Île de la Cité" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Notre-Dame_de_Paris-France.JPG", "images": [], "videos": [] },
-    "details": { "description": "Cathédrale gothique.", "opening_hours": { "monday": "08:00-18:45", "tuesday": "08:00-18:45", "wednesday": "08:00-18:45", "thursday": "08:00-18:45", "friday": "08:00-18:45", "saturday": "08:00-18:45", "sunday": "08:00-18:45" }, "typical_duration_minutes": 60, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["gothique", "histoire"] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/af/Notre-Dame_de_Paris_2013_ND_01.jpg/500px-Notre-Dame_de_Paris_2013_ND_01.jpg",
+      "images": [],
+      "videos": []
+    },
+    "details": { "description": "Cathédrale gothique célèbre.", "opening_hours": { "monday": "08:00-18:45", "tuesday": "08:00-18:45", "wednesday": "08:00-18:45", "thursday": "08:00-18:45", "friday": "08:00-18:45", "saturday": "08:00-18:45", "sunday": "08:00-18:45" }, "typical_duration_minutes": 60, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["gothique", "histoire"] },
     "indoor_outdoor": "indoor",
     "activities": ["culture"],
-    "sensitivity": {}
+    "sensitivity": { "cold": false, "heat": false, "humidity": false }
   },
   {
     "id": "arc_de_triomphe",
@@ -41,11 +53,15 @@
     "category": "Monuments",
     "subcategory": "historique",
     "location": { "lat": 48.873792, "lon": 2.295027, "city": "Paris", "country": "France", "address": "Place Charles de Gaulle" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/4/4d/Paris%2C_Triumphbogen_--_2014_--_1624.jpg", "images": [], "videos": [] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Arc_de_Triomphe%2C_Paris_21_October_2010.jpg/500px-Arc_de_Triomphe%2C_Paris_21_October_2010.jpg",
+      "images": [],
+      "videos": []
+    },
     "details": { "description": "Arc dédié aux armées de la Révolution.", "opening_hours": { "monday": "10:00-22:30", "tuesday": "10:00-22:30", "wednesday": "10:00-22:30", "thursday": "10:00-22:30", "friday": "10:00-22:30", "saturday": "10:00-22:30", "sunday": "10:00-22:30" }, "typical_duration_minutes": 45, "cost_estimate": { "adult": 13, "child": 0, "currency": "EUR", "price_category": "$" }, "effort_level": 2, "tags": ["vue", "histoire"] },
     "indoor_outdoor": "outdoor",
     "activities": ["découverte"],
-    "sensitivity": {}
+    "sensitivity": { "cold": true, "heat": true, "humidity": true }
   },
   {
     "id": "sacre_coeur",
@@ -53,11 +69,15 @@
     "category": "Monuments",
     "subcategory": "religieux",
     "location": { "lat": 48.886722, "lon": 2.342953, "city": "Paris", "country": "France", "address": "Montmartre" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/1/1e/Paris%2C_Sacr%C3%A9-C%C5%93ur_de_Montmartre_--_2014_--_1194.jpg", "images": [], "videos": [] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Paris%2C_Sacr%C3%A9-C%C5%93ur_de_Montmartre_--_2014_--_1194.jpg/500px-Paris%2C_Sacr%C3%A9-C%C5%93ur_de_Montmartre_--_2014_--_1194.jpg",
+      "images": [],
+      "videos": []
+    },
     "details": { "description": "Basilique blanche sur la butte Montmartre.", "opening_hours": { "monday": "06:00-22:30", "tuesday": "06:00-22:30", "wednesday": "06:00-22:30", "thursday": "06:00-22:30", "friday": "06:00-22:30", "saturday": "06:00-22:30", "sunday": "06:00-22:30" }, "typical_duration_minutes": 45, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 3, "tags": ["vue", "quartier"] },
     "indoor_outdoor": "indoor",
     "activities": ["culture"],
-    "sensitivity": {}
+    "sensitivity": { "cold": false, "heat": false, "humidity": false }
   },
   {
     "id": "musee_orsay",
@@ -65,23 +85,15 @@
     "category": "Musées",
     "subcategory": "art",
     "location": { "lat": 48.860004, "lon": 2.326835, "city": "Paris", "country": "France", "address": "Quai Anatole France" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Mus%C3%A9e_d%27Orsay._Paris.JPG", "images": [], "videos": [] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Mus%C3%A9e_d%27Orsay._Paris.JPG/500px-Mus%C3%A9e_d%27Orsay._Paris.JPG",
+      "images": [],
+      "videos": []
+    },
     "details": { "description": "Musée d'art du XIXe siècle.", "opening_hours": { "monday": "09:30-18:00", "tuesday": "closed", "wednesday": "09:30-18:00", "thursday": "09:30-21:45", "friday": "09:30-18:00", "saturday": "09:30-18:00", "sunday": "09:30-18:00" }, "typical_duration_minutes": 120, "cost_estimate": { "adult": 16, "child": 0, "currency": "EUR", "price_category": "$$" }, "effort_level": 2, "tags": ["impressionnisme"] },
     "indoor_outdoor": "indoor",
     "activities": ["culture"],
-    "sensitivity": {}
-  },
-  {
-    "id": "centre_pompidou",
-    "name": "Centre Georges Pompidou",
-    "category": "Musées",
-    "subcategory": "art moderne",
-    "location": { "lat": 48.860642, "lon": 2.352245, "city": "Paris", "country": "France", "address": "Rue Beaubourg" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Centre_Georges_Pompidou,_Paris_2014.jpg/1024px-Centre_Georges_Pompidou,_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Musée d'art moderne et contemporain.", "opening_hours": { "monday": "11:00-21:00", "tuesday": "closed", "wednesday": "11:00-21:00", "thursday": "11:00-21:00", "friday": "11:00-21:00", "saturday": "11:00-21:00", "sunday": "11:00-21:00" }, "typical_duration_minutes": 120, "cost_estimate": { "adult": 15, "child": 0, "currency": "EUR", "price_category": "$$" }, "effort_level": 2, "tags": ["moderne"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["culture"],
-    "sensitivity": {}
+    "sensitivity": { "cold": false, "heat": false, "humidity": false }
   },
   {
     "id": "jardin_luxembourg",
@@ -89,20 +101,12 @@
     "category": "Nature",
     "subcategory": "parc",
     "location": { "lat": 48.8462, "lon": 2.3373, "city": "Paris", "country": "France", "address": "6e arrondissement" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Jardin_du_Luxembourg_2014.jpg/1024px-Jardin_du_Luxembourg_2014.jpg", "images": [], "videos": [] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Jardin_du_Luxembourg_2014.jpg/500px-Jardin_du_Luxembourg_2014.jpg",
+      "images": [],
+      "videos": []
+    },
     "details": { "description": "Jardin public avec bassin et statues.", "opening_hours": { "monday": "07:30-21:30", "tuesday": "07:30-21:30", "wednesday": "07:30-21:30", "thursday": "07:30-21:30", "friday": "07:30-21:30", "saturday": "07:30-21:30", "sunday": "07:30-21:30" }, "typical_duration_minutes": 60, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["détente"] },
-    "indoor_outdoor": "outdoor",
-    "activities": ["loisirs"],
-    "sensitivity": { "cold": true, "heat": true, "humidity": true }
-  },
-  {
-    "id": "buttes_chaumont",
-    "name": "Parc des Buttes-Chaumont",
-    "category": "Nature",
-    "subcategory": "parc",
-    "location": { "lat": 48.8804, "lon": 2.3826, "city": "Paris", "country": "France", "address": "19e arrondissement" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Buttes-Chaumont_Paris_2013.jpg/1024px-Buttes-Chaumont_Paris_2013.jpg", "images": [], "videos": [] },
-    "details": { "description": "Parc pittoresque avec cascade et temple.", "opening_hours": { "monday": "07:00-21:00", "tuesday": "07:00-21:00", "wednesday": "07:00-21:00", "thursday": "07:00-21:00", "friday": "07:00-21:00", "saturday": "07:00-21:00", "sunday": "07:00-21:00" }, "typical_duration_minutes": 90, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 2, "tags": ["promenade", "cascade"] },
     "indoor_outdoor": "outdoor",
     "activities": ["loisirs"],
     "sensitivity": { "cold": true, "heat": true, "humidity": true }
@@ -113,23 +117,15 @@
     "category": "Restaurants",
     "subcategory": "traditionnel",
     "location": { "lat": 48.871748, "lon": 2.348241, "city": "Paris", "country": "France", "address": "7 Rue du Faubourg Montmartre" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Bouillon_Chartier_2014.jpg/1024px-Bouillon_Chartier_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Restaurant historique, cuisine française abordable.", "opening_hours": { "monday": "11:30-22:00", "tuesday": "11:30-22:00", "wednesday": "11:30-22:00", "thursday": "11:30-22:00", "friday": "11:30-22:00", "saturday": "11:30-22:00", "sunday": "11:30-22:00" }, "typical_duration_minutes": 60, "cost_estimate": { "adult": 15, "child": 10, "currency": "EUR", "price_category": "$" }, "effort_level": 1, "tags": ["food", "traditionnel"] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Bouillon_Chartier.jpg/500px-Bouillon_Chartier.jpg",
+      "images": [],
+      "videos": []
+    },
+    "details": { "description": "Restaurant historique, cuisine française abordable.", "opening_hours": { "monday": "11:30-22:00", "tuesday": "11:30-22:00", "wednesday": "11:30-22:00", "thursday": "11:30-22:00", "friday": "11:30-22:00", "saturday": "11:30-22:00", "sunday": "11:30-22:00" }, "typical_duration_minutes": 75, "cost_estimate": { "adult": 15, "child": 10, "currency": "EUR", "price_category": "$" }, "effort_level": 1, "tags": ["food", "traditionnel"] },
     "indoor_outdoor": "indoor",
     "activities": ["restauration"],
-    "sensitivity": {}
-  },
-  {
-    "id": "crazy_horse",
-    "name": "Crazy Horse Paris",
-    "category": "Vie nocturne",
-    "subcategory": "spectacle",
-    "location": { "lat": 48.8656, "lon": 2.3002, "city": "Paris", "country": "France", "address": "12 Avenue George V" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Crazy_Horse_Paris_2013.jpg/1024px-Crazy_Horse_Paris_2013.jpg", "images": [], "videos": [] },
-    "details": { "description": "Cabaret légendaire.", "opening_hours": { "monday": "20:00-01:00", "tuesday": "20:00-01:00", "wednesday": "20:00-01:00", "thursday": "20:00-01:00", "friday": "20:00-01:00", "saturday": "20:00-01:00", "sunday": "20:00-01:00" }, "typical_duration_minutes": 90, "cost_estimate": { "adult": 100, "child": 0, "currency": "EUR", "price_category": "$$$" }, "effort_level": 1, "tags": ["cabaret", "nightlife"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["vie nocturne"],
-    "sensitivity": {}
+    "sensitivity": { "cold": false, "heat": false, "humidity": false }
   },
   {
     "id": "moulin_rouge",
@@ -137,35 +133,15 @@
     "category": "Vie nocturne",
     "subcategory": "spectacle",
     "location": { "lat": 48.8841, "lon": 2.3322, "city": "Paris", "country": "France", "address": "82 Boulevard de Clichy" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Moulin_Rouge_Paris_2014.jpg/1024px-Moulin_Rouge_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Célèbre cabaret parisien.", "opening_hours": { "monday": "19:00-23:00", "tuesday": "19:00-23:00", "wednesday": "19:00-23:00", "thursday": "19:00-23:00", "friday": "19:00-23:00", "saturday": "19:00-23:00", "sunday": "19:00-23:00" }, "typical_duration_minutes": 90, "cost_estimate": { "adult": 110, "child": 0, "currency": "EUR", "price_category": "$$$" }, "effort_level": 1, "tags": ["cabaret", "nightlife"] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Moulin_Rouge_at_night%2C_Paris_15_June_2013.jpg/500px-Moulin_Rouge_at_night%2C_Paris_15_June_2013.jpg",
+      "images": [],
+      "videos": []
+    },
+    "details": { "description": "Célèbre cabaret parisien.", "opening_hours": { "monday": "19:00-23:00", "tuesday": "19:00-23:00", "wednesday": "19:00-23:00", "thursday": "19:00-23:00", "friday": "19:00-23:00", "saturday": "19:00-23:00", "sunday": "19:00-23:00" }, "typical_duration_minutes": 120, "cost_estimate": { "adult": 110, "child": 0, "currency": "EUR", "price_category": "$$$" }, "effort_level": 1, "tags": ["cabaret", "nightlife"] },
     "indoor_outdoor": "indoor",
     "activities": ["vie nocturne"],
-    "sensitivity": {}
-  },
-  {
-    "id": "paris_zoo",
-    "name": "Paris Zoo (Zoo de Vincennes)",
-    "category": "Nature",
-    "subcategory": "zoo",
-    "location": { "lat": 48.8355, "lon": 2.4086, "city": "Paris", "country": "France", "address": "Avenue Daumesnil" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Paris_Zoo_2014.jpg/1024px-Paris_Zoo_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Zoo rénové avec 5 biozones.", "opening_hours": { "monday": "09:00-18:00", "tuesday": "09:00-18:00", "wednesday": "09:00-18:00", "thursday": "09:00-18:00", "friday": "09:00-18:00", "saturday": "09:00-18:00", "sunday": "09:00-18:00" }, "typical_duration_minutes": 180, "cost_estimate": { "adult": 20, "child": 15, "currency": "EUR", "price_category": "$$" }, "effort_level": 2, "tags": ["animaux"] },
-    "indoor_outdoor": "outdoor",
-    "activities": ["loisirs"],
-    "sensitivity": { "cold": true, "heat": true, "humidity": false }
-  },
-  {
-    "id": "aquarium_paris",
-    "name": "Aquarium de Paris (Cinéaqua)",
-    "category": "Nature",
-    "subcategory": "aquarium",
-    "location": { "lat": 48.8636, "lon": 2.2926, "city": "Paris", "country": "France", "address": "5 Avenue Albert de Mun" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Aquarium_de_Paris_2014.jpg/1024px-Aquarium_de_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Aquarium dans le Trocadéro.", "opening_hours": { "monday": "10:00-19:00", "tuesday": "10:00-19:00", "wednesday": "10:00-19:00", "thursday": "10:00-19:00", "friday": "10:00-19:00", "saturday": "10:00-19:00", "sunday": "10:00-19:00" }, "typical_duration_minutes": 90, "cost_estimate": { "adult": 20.5, "child": 13, "currency": "EUR", "price_category": "$$" }, "effort_level": 1, "tags": ["poissons"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["loisirs"],
-    "sensitivity": {}
+    "sensitivity": { "cold": false, "heat": false, "humidity": false }
   },
   {
     "id": "catacombes",
@@ -173,59 +149,15 @@
     "category": "Monuments",
     "subcategory": "histoire",
     "location": { "lat": 48.834, "lon": 2.3326, "city": "Paris", "country": "France", "address": "1 Avenue du Colonel Henri Rol-Tanguy" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/11/Catacombes_de_Paris_2014.jpg/1024px-Catacombes_de_Paris_2014.jpg", "images": [], "videos": [] },
+    "media": {
+      "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Catacombes_de_Paris.jpg/500px-Catacombes_de_Paris.jpg",
+      "images": [],
+      "videos": []
+    },
     "details": { "description": "Ossuaire souterrain.", "opening_hours": { "monday": "closed", "tuesday": "10:00-20:30", "wednesday": "10:00-20:30", "thursday": "10:00-20:30", "friday": "10:00-20:30", "saturday": "10:00-20:30", "sunday": "10:00-20:30" }, "typical_duration_minutes": 60, "cost_estimate": { "adult": 29, "child": 0, "currency": "EUR", "price_category": "$$" }, "effort_level": 2, "tags": ["souterrain", "histoire"] },
     "indoor_outdoor": "indoor",
     "activities": ["découverte"],
     "sensitivity": { "cold": true, "heat": false, "humidity": true }
-  },
-  {
-    "id": "galeries_lafayette",
-    "name": "Galeries Lafayette Haussmann",
-    "category": "Monuments",
-    "subcategory": "grand magasin",
-    "location": { "lat": 48.8738, "lon": 2.3322, "city": "Paris", "country": "France", "address": "40 Boulevard Haussmann" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Galeries_Lafayette_Paris_2014.jpg/1024px-Galeries_Lafayette_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Grand magasin avec coupole et terrasse.", "opening_hours": { "monday": "10:00-20:00", "tuesday": "10:00-20:00", "wednesday": "10:00-20:00", "thursday": "10:00-20:00", "friday": "10:00-20:00", "saturday": "10:00-20:00", "sunday": "11:00-19:00" }, "typical_duration_minutes": 60, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["shopping", "vue"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["shopping"],
-    "sensitivity": {}
-  },
-  {
-    "id": "l_astrance",
-    "name": "L'Astrance",
-    "category": "Restaurants",
-    "subcategory": "gastronomique",
-    "location": { "lat": 48.8536, "lon": 2.2803, "city": "Paris", "country": "France", "address": "4 Rue Beethoven" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/L%27Astrance_Paris_2014.jpg/1024px-L%27Astrance_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Restaurant 3 étoiles Michelin.", "opening_hours": { "monday": "closed", "tuesday": "12:00-13:30,19:30-21:30", "wednesday": "12:00-13:30,19:30-21:30", "thursday": "12:00-13:30,19:30-21:30", "friday": "12:00-13:30,19:30-21:30", "saturday": "12:00-13:30,19:30-21:30", "sunday": "closed" }, "typical_duration_minutes": 120, "cost_estimate": { "adult": 150, "child": 150, "currency": "EUR", "price_category": "$$$" }, "effort_level": 1, "tags": ["gastronomie", "étoilé"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["restauration"],
-    "sensitivity": {}
-  },
-  {
-    "id": "palais_garnier",
-    "name": "Opéra Garnier",
-    "category": "Monuments",
-    "subcategory": "opéra",
-    "location": { "lat": 48.8719, "lon": 2.3315, "city": "Paris", "country": "France", "address": "Place de l'Opéra" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Opera_Garnier_Paris_2014.jpg/1024px-Opera_Garnier_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Opéra néo-baroque.", "opening_hours": { "monday": "10:00-17:00", "tuesday": "10:00-17:00", "wednesday": "10:00-17:00", "thursday": "10:00-17:00", "friday": "10:00-17:00", "saturday": "10:00-17:00", "sunday": "10:00-17:00" }, "typical_duration_minutes": 60, "cost_estimate": { "adult": 15, "child": 0, "currency": "EUR", "price_category": "$" }, "effort_level": 1, "tags": ["opéra", "architecture"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["culture"],
-    "sensitivity": {}
-  },
-  {
-    "id": "sainte_chapelle",
-    "name": "Sainte-Chapelle",
-    "category": "Monuments",
-    "subcategory": "religieux",
-    "location": { "lat": 48.8554, "lon": 2.3449, "city": "Paris", "country": "France", "address": "Île de la Cité" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7b/Sainte-Chapelle_Paris_2014.jpg/1024px-Sainte-Chapelle_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Chapelle gothique aux vitraux exceptionnels.", "opening_hours": { "monday": "09:00-17:00", "tuesday": "09:00-17:00", "wednesday": "09:00-17:00", "thursday": "09:00-17:00", "friday": "09:00-17:00", "saturday": "09:00-17:00", "sunday": "09:00-17:00" }, "typical_duration_minutes": 45, "cost_estimate": { "adult": 11.5, "child": 0, "currency": "EUR", "price_category": "$" }, "effort_level": 1, "tags": ["vitraux", "gothique"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["culture"],
-    "sensitivity": {}
   },
   {
     "id": "concorde_obelisk",
@@ -233,154 +165,14 @@
     "category": "Monuments",
     "subcategory": "historique",
     "location": { "lat": 48.8656, "lon": 2.3212, "city": "Paris", "country": "France", "address": "Place de la Concorde" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Ob%C3%A9lisque_de_la_Concorde_Paris_2014.jpg/1024px-Ob%C3%A9lisque_de_la_Concorde_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Obélisque égyptien.", "opening_hours": {}, "typical_duration_minutes": 15, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["égyptien"] },
+    "media": {
+      "thumbnail": "https://image.pollinations.ai/prompt/Ob%C3%A9lisque%20de%20la%20Concorde%20Paris",
+      "images": [],
+      "videos": []
+    },
+    "details": { "description": "Obélisque égyptien ancien.", "opening_hours": { "monday": "00:00-23:59", "tuesday": "00:00-23:59", "wednesday": "00:00-23:59", "thursday": "00:00-23:59", "friday": "00:00-23:59", "saturday": "00:00-23:59", "sunday": "00:00-23:59" }, "typical_duration_minutes": 20, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["égyptien", "histoire"] },
     "indoor_outdoor": "outdoor",
     "activities": ["découverte"],
-    "sensitivity": { "cold": false, "heat": true, "humidity": false }
-  },
-  {
-    "id": "invalides",
-    "name": "Hôtel des Invalides (Tombeau de Napoléon)",
-    "category": "Musées",
-    "subcategory": "histoire",
-    "location": { "lat": 48.8561, "lon": 2.3127, "city": "Paris", "country": "France", "address": "Esplanade des Invalides" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Invalides_Paris_2014.jpg/1024px-Invalides_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Musée militaire et tombeau de Napoléon.", "opening_hours": { "monday": "10:00-18:00", "tuesday": "10:00-18:00", "wednesday": "10:00-18:00", "thursday": "10:00-18:00", "friday": "10:00-18:00", "saturday": "10:00-18:00", "sunday": "10:00-18:00" }, "typical_duration_minutes": 90, "cost_estimate": { "adult": 15, "child": 0, "currency": "EUR", "price_category": "$$" }, "effort_level": 2, "tags": ["histoire", "militaire"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["culture"],
-    "sensitivity": {}
-  },
-  {
-    "id": "musee_rodin",
-    "name": "Musée Rodin",
-    "category": "Musées",
-    "subcategory": "sculpture",
-    "location": { "lat": 48.8556, "lon": 2.3158, "city": "Paris", "country": "France", "address": "77 Rue de Varenne" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Mus%C3%A9e_Rodin_Paris_2014.jpg/1024px-Mus%C3%A9e_Rodin_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Jardin et sculptures de Rodin.", "opening_hours": { "monday": "closed", "tuesday": "10:00-18:30", "wednesday": "10:00-18:30", "thursday": "10:00-18:30", "friday": "10:00-18:30", "saturday": "10:00-18:30", "sunday": "10:00-18:30" }, "typical_duration_minutes": 90, "cost_estimate": { "adult": 13, "child": 0, "currency": "EUR", "price_category": "$" }, "effort_level": 1, "tags": ["sculpture", "jardin"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["culture"],
-    "sensitivity": {}
-  },
-  {
-    "id": "quai_branly",
-    "name": "Musée du Quai Branly - Jacques Chirac",
-    "category": "Musées",
-    "subcategory": "arts premiers",
-    "location": { "lat": 48.8588, "lon": 2.2975, "city": "Paris", "country": "France", "address": "37 Quai Branly" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Quai_Branly_Museum_Paris_2014.jpg/1024px-Quai_Branly_Museum_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Arts et civilisations d'Afrique, Asie, Océanie, Amériques.", "opening_hours": { "monday": "closed", "tuesday": "10:30-19:00", "wednesday": "10:30-19:00", "thursday": "10:30-22:00", "friday": "10:30-19:00", "saturday": "10:30-19:00", "sunday": "10:30-19:00" }, "typical_duration_minutes": 120, "cost_estimate": { "adult": 12, "child": 0, "currency": "EUR", "price_category": "$" }, "effort_level": 2, "tags": ["arts premiers"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["culture"],
-    "sensitivity": {}
-  },
-  {
-    "id": "geode_cite_sciences",
-    "name": "La Géode - Cité des Sciences",
-    "category": "Nature",
-    "subcategory": "science",
-    "location": { "lat": 48.895, "lon": 2.387, "city": "Paris", "country": "France", "address": "30 Avenue Corentin Cariou" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Geode_Paris_2014.jpg/1024px-Geode_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Salle de cinéma immersive en géode.", "opening_hours": { "monday": "closed", "tuesday": "10:00-18:00", "wednesday": "10:00-18:00", "thursday": "10:00-18:00", "friday": "10:00-18:00", "saturday": "10:00-18:00", "sunday": "10:00-18:00" }, "typical_duration_minutes": 60, "cost_estimate": { "adult": 13, "child": 10, "currency": "EUR", "price_category": "$" }, "effort_level": 1, "tags": ["science", "cinéma"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["loisirs"],
-    "sensitivity": {}
-  },
-  {
-    "id": "disneyland",
-    "name": "Disneyland Paris",
-    "category": "Vie nocturne",
-    "subcategory": "parc d'attractions",
-    "location": { "lat": 48.8587, "lon": 2.775, "city": "Marne-la-Vallée", "country": "France", "address": "77777 Marne-la-Vallée" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Disneyland_Paris_2014.jpg/1024px-Disneyland_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Parc à thème Disney.", "opening_hours": { "monday": "09:30-20:00", "tuesday": "09:30-20:00", "wednesday": "09:30-20:00", "thursday": "09:30-20:00", "friday": "09:30-20:00", "saturday": "09:30-20:00", "sunday": "09:30-20:00" }, "typical_duration_minutes": 480, "cost_estimate": { "adult": 75, "child": 68, "currency": "EUR", "price_category": "$$$" }, "effort_level": 3, "tags": ["disney", "famille"] },
-    "indoor_outdoor": "outdoor",
-    "activities": ["loisirs"],
-    "sensitivity": { "cold": true, "heat": true, "humidity": false }
-  },
-  {
-    "id": "lido_paris",
-    "name": "Lido de Paris",
-    "category": "Vie nocturne",
-    "subcategory": "spectacle",
-    "location": { "lat": 48.8733, "lon": 2.3008, "city": "Paris", "country": "France", "address": "116 Avenue des Champs-Élysées" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Lido_Paris_2014.jpg/1024px-Lido_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Cabaret et revue célèbre.", "opening_hours": { "monday": "20:00-23:00", "tuesday": "20:00-23:00", "wednesday": "20:00-23:00", "thursday": "20:00-23:00", "friday": "20:00-23:00", "saturday": "20:00-23:00", "sunday": "20:00-23:00" }, "typical_duration_minutes": 90, "cost_estimate": { "adult": 85, "child": 0, "currency": "EUR", "price_category": "$$$" }, "effort_level": 1, "tags": ["cabaret"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["vie nocturne"],
-    "sensitivity": {}
-  },
-  {
-    "id": "parc_de_la_villette",
-    "name": "Parc de la Villette",
-    "category": "Nature",
-    "subcategory": "parc",
-    "location": { "lat": 48.894, "lon": 2.386, "city": "Paris", "country": "France", "address": "211 Avenue Jean Jaurès" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Parc_de_la_Villette_Paris_2014.jpg/1024px-Parc_de_la_Villette_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Parc culturel avec cité des sciences, géode, etc.", "opening_hours": { "monday": "06:00-01:00", "tuesday": "06:00-01:00", "wednesday": "06:00-01:00", "thursday": "06:00-01:00", "friday": "06:00-01:00", "saturday": "06:00-01:00", "sunday": "06:00-01:00" }, "typical_duration_minutes": 120, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 2, "tags": ["culture", "promenade"] },
-    "indoor_outdoor": "outdoor",
-    "activities": ["loisirs"],
-    "sensitivity": { "cold": true, "heat": true, "humidity": false }
-  },
-  {
-    "id": "eglise_madeleine",
-    "name": "Église de la Madeleine",
-    "category": "Monuments",
-    "subcategory": "religieux",
-    "location": { "lat": 48.8703, "lon": 2.3242, "city": "Paris", "country": "France", "address": "Place de la Madeleine" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/Madeleine_Paris_2014.jpg/1024px-Madeleine_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Église néoclassique.", "opening_hours": { "monday": "09:30-19:00", "tuesday": "09:30-19:00", "wednesday": "09:30-19:00", "thursday": "09:30-19:00", "friday": "09:30-19:00", "saturday": "09:30-19:00", "sunday": "09:30-19:00" }, "typical_duration_minutes": 30, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["néoclassique"] },
-    "indoor_outdoor": "indoor",
-    "activities": ["culture"],
-    "sensitivity": {}
-  },
-  {
-    "id": "bastille_place",
-    "name": "Place de la Bastille",
-    "category": "Monuments",
-    "subcategory": "historique",
-    "location": { "lat": 48.8533, "lon": 2.3691, "city": "Paris", "country": "France", "address": "Place de la Bastille" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5c/Bastille_Paris_2014.jpg/1024px-Bastille_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Colonne de Juillet et opéra.", "opening_hours": {}, "typical_duration_minutes": 15, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["histoire"] },
-    "indoor_outdoor": "outdoor",
-    "activities": ["découverte"],
-    "sensitivity": { "cold": false, "heat": true, "humidity": false }
-  },
-  {
-    "id": "pere_lachaise",
-    "name": "Cimetière du Père-Lachaise",
-    "category": "Nature",
-    "subcategory": "cimetière",
-    "location": { "lat": 48.8618, "lon": 2.3932, "city": "Paris", "country": "France", "address": "16 Rue du Repos" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/P%C3%A8re-Lachaise_Paris_2014.jpg/1024px-P%C3%A8re-Lachaise_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Cimetière célèbre (Jim Morrison, Oscar Wilde).", "opening_hours": { "monday": "08:00-18:00", "tuesday": "08:00-18:00", "wednesday": "08:00-18:00", "thursday": "08:00-18:00", "friday": "08:00-18:00", "saturday": "08:30-18:00", "sunday": "08:30-18:00" }, "typical_duration_minutes": 60, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 2, "tags": ["tombeaux", "promenade"] },
-    "indoor_outdoor": "outdoor",
-    "activities": ["loisirs"],
     "sensitivity": { "cold": true, "heat": true, "humidity": true }
-  },
-  {
-    "id": "canal_saint_martin",
-    "name": "Canal Saint-Martin",
-    "category": "Nature",
-    "subcategory": "balade",
-    "location": { "lat": 48.8734, "lon": 2.3643, "city": "Paris", "country": "France", "address": "10e arrondissement" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Canal_Saint-Martin_Paris_2014.jpg/1024px-Canal_Saint-Martin_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Quartier animé et berges du canal.", "opening_hours": {}, "typical_duration_minutes": 45, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["canal", "balade"] },
-    "indoor_outdoor": "outdoor",
-    "activities": ["loisirs"],
-    "sensitivity": { "cold": true, "heat": false, "humidity": false }
-  },
-  {
-    "id": "rue_cler",
-    "name": "Rue Cler",
-    "category": "Restaurants",
-    "subcategory": "rue commerçante",
-    "location": { "lat": 48.857, "lon": 2.303, "city": "Paris", "country": "France", "address": "7e arrondissement" },
-    "media": { "thumbnail": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Rue_Cler_Paris_2014.jpg/1024px-Rue_Cler_Paris_2014.jpg", "images": [], "videos": [] },
-    "details": { "description": "Rue piétonne avec commerces alimentaires.", "opening_hours": { "monday": "08:00-20:00", "tuesday": "08:00-20:00", "wednesday": "08:00-20:00", "thursday": "08:00-20:00", "friday": "08:00-20:00", "saturday": "08:00-20:00", "sunday": "08:00-13:00" }, "typical_duration_minutes": 30, "cost_estimate": { "adult": 0, "child": 0, "currency": "EUR", "price_category": "free" }, "effort_level": 1, "tags": ["shopping", "food"] },
-    "indoor_outdoor": "outdoor",
-    "activities": ["restauration", "shopping"],
-    "sensitivity": { "cold": true, "heat": true, "humidity": false }
   }
 ]

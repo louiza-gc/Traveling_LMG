@@ -6,5 +6,5 @@ data class Item(
     val imageUrl: String = "",
     val city: String = "",
     val country: String = "",
-    val isFromApi: Boolean = false
+    var isFavorite: Boolean = false
 )

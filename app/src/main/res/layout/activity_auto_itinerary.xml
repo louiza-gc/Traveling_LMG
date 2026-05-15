@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp"
+    android:background="#F4F6F8">
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Générer un parcours automatique"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:textColor="#00A8A8" />
+    <EditText
+        android:id="@+id/etAutoName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Nom du parcours (ex: Tour de Paris)"
+        android:padding="12dp"
+        android:background="@android:drawable/edit_text"
+        android:layout_marginTop="16dp" />
+    <EditText
+        android:id="@+id/etAutoCity"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Ville principale"
+        android:padding="12dp"
+        android:background="@android:drawable/edit_text"
+        android:layout_marginTop="8dp" />
+    <Button
+        android:id="@+id/btnNext"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_marginTop="16dp"
+        android:text="Continuer"
+        android:backgroundTint="#00A8A8"
+        android:textColor="@android:color/white" />
+</LinearLayout>

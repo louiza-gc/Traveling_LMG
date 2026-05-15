@@ -1,4 +1,4 @@
-package com.example.traveling.TravelPath.Accueil
+package com.example.traveling.TravelPath.Parcours
 
 import android.content.Intent
 import android.os.Bundle
@@ -6,6 +6,7 @@ import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.traveling.R
+import com.example.traveling.TravelPath.Accueil.PlaceRepository
 import kotlinx.coroutines.launch
 
 class PreferencesActivity : AppCompatActivity() {
@@ -14,8 +15,12 @@ class PreferencesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_preferences)
 
-        val category = intent.getStringExtra("CATEGORY_NAME") ?: ""
-        val city = intent.getStringExtra("CITY") ?: "Paris"
+        // Récupération des extras envoyés par AutoItineraryActivity
+        val itineraryName = intent.getStringExtra("itinerary_name") ?: ""
+        val city = intent.getStringExtra("city") ?: "Paris"
+
+        // Remplir la barre d'action
+        supportActionBar?.title = if (itineraryName.isNotEmpty()) itineraryName else "Préférences"
 
         val cbDiscover = findViewById<CheckBox>(R.id.cb_discover)
         val cbCulture = findViewById<CheckBox>(R.id.cb_culture)
@@ -61,10 +66,12 @@ class PreferencesActivity : AppCompatActivity() {
             lifecycleScope.launch {
                 PlaceRepository.init(applicationContext)
                 val allPlaces = PlaceRepository.loadAllPlaces()
-                val filtered = allPlaces.filter { it.category == category || category.isEmpty() }
+                // Filtrer par ville (optionnel)
+                val filtered = allPlaces.filter { it.location.city.equals(city, ignoreCase = true) }
                 val itineraries = ItineraryPlanner.generateItineraries(filtered, prefs)
                 val intent = Intent(this@PreferencesActivity, ItineraryActivity::class.java)
                 intent.putExtra("itineraries", ArrayList(itineraries))
+                intent.putExtra("itinerary_name", itineraryName)
                 startActivity(intent)
             }
         }

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/menu_my_itineraries"
+        android:icon="@drawable/ic_map"
+        android:title="Mes parcours" />
+    <item
+        android:id="@+id/menu_switch_travelshare"
+        android:icon="@drawable/ic_explore"
+        android:title="Aller vers TravelShare" />
+    <item
+        android:id="@+id/menu_logout"
+        android:icon="@drawable/ic_logout"
+        android:title="Déconnexion" />
+</menu>

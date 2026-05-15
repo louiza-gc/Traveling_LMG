@@ -1,15 +1,15 @@
-package com.example.traveling.TravelPath.Accueil
+package com.example.traveling.TravelPath.Parcours
 
 import android.os.Bundle
-import android.view.LayoutInflater
-import android.view.View
-import android.view.ViewGroup
+import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.traveling.R
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class ItineraryDetailActivity : AppCompatActivity() {
 
@@ -19,7 +19,7 @@ class ItineraryDetailActivity : AppCompatActivity() {
 
         val itinerary = intent.getSerializableExtra("itinerary") as? Itinerary
         if (itinerary == null) {
-            Toast.makeText(this, "Erreur : itinéraire introuvable", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Itinéraire introuvable", Toast.LENGTH_SHORT).show()
             finish()
             return
         }
@@ -33,18 +33,45 @@ class ItineraryDetailActivity : AppCompatActivity() {
         val recyclerSteps = findViewById<RecyclerView>(R.id.recyclerSteps)
         recyclerSteps.layoutManager = LinearLayoutManager(this)
         recyclerSteps.adapter = StepsAdapter(itinerary.steps)
+
+        val btnSave = findViewById<Button>(R.id.btn_save_itinerary)
+        btnSave.setOnClickListener {
+            val uid = FirebaseAuth.getInstance().currentUser?.uid
+            if (uid == null) {
+                Toast.makeText(this, "Connectez-vous pour sauvegarder", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            val data = hashMapOf(
+                "name" to itinerary.name,
+                "description" to itinerary.description,
+                "placeIds" to itinerary.steps.map { it.placeId },
+                "totalCost" to itinerary.totalCost,
+                "totalDurationMinutes" to itinerary.totalDurationMinutes,
+                "averageEffort" to itinerary.averageEffort,
+                "createdBy" to uid,
+                "createdAt" to System.currentTimeMillis()
+            )
+            FirebaseFirestore.getInstance().collection("itineraries")
+                .add(data)
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Parcours sauvegardé", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { e ->
+                    Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+        }
     }
 
     private inner class StepsAdapter(private val steps: List<Step>) :
         RecyclerView.Adapter<StepsAdapter.StepViewHolder>() {
 
-        inner class StepViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        inner class StepViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
             val title: TextView = itemView.findViewById(android.R.id.text1)
             val subtitle: TextView = itemView.findViewById(android.R.id.text2)
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): StepViewHolder {
-            val view = LayoutInflater.from(parent.context)
+        override fun onCreateViewHolder(parent: android.view.ViewGroup, viewType: Int): StepViewHolder {
+            val view = android.view.LayoutInflater.from(parent.context)
                 .inflate(android.R.layout.simple_list_item_2, parent, false)
             return StepViewHolder(view)
         }

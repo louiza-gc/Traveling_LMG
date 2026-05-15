@@ -2,19 +2,20 @@ package com.example.traveling.TravelPath.Accueil
 
 import android.content.Intent
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.traveling.R
+import com.example.traveling.TravelPath.Accueil.AutoItineraryActivity
+import com.example.traveling.TravelPath.Parcours.CreateItineraryActivity
 
 class CategoryAdapter(private val list: List<Category>) :
     RecyclerView.Adapter<CategoryAdapter.ViewHolder>() {
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val image: ImageView = view.findViewById(R.id.image)
-        val title: TextView = view.findViewById(R.id.title)
+    class ViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
+        val image: ImageView = itemView.findViewById(R.id.image)
+        val title: TextView = itemView.findViewById(R.id.title)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -27,7 +28,6 @@ class CategoryAdapter(private val list: List<Category>) :
         val item = list[position]
         holder.title.text = item.title
         holder.image.setImageResource(item.image)
-
         holder.itemView.setOnClickListener {
             val context = holder.itemView.context
             val intent = Intent(context, CategoryDetailActivity::class.java).apply {

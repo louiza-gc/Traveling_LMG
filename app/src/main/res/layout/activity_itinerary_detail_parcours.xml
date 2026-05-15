@@ -7,7 +7,7 @@
     android:background="#F4F6F8">
 
     <TextView
-        android:id="@+id/detail_title"
+        android:id="@+id/tv_itinerary_name"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:textSize="22sp"
@@ -15,48 +15,40 @@
         android:textColor="#00A8A8" />
 
     <TextView
-        android:id="@+id/detail_desc"
+        android:id="@+id/tv_itinerary_description"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:textSize="14sp" />
 
     <TextView
-        android:id="@+id/detail_cost"
+        android:id="@+id/tv_total_cost"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp" />
+        android:layout_marginTop="12dp"
+        android:textStyle="bold" />
 
     <TextView
-        android:id="@+id/detail_duration"
+        android:id="@+id/tv_total_duration"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" />
 
     <TextView
-        android:id="@+id/detail_effort"
+        android:id="@+id/tv_average_effort"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="8dp" />
 
-    <Button
-        android:id="@+id/btn_save_itinerary"
-        android:layout_width="match_parent"
-        android:layout_height="48dp"
-        android:layout_marginTop="8dp"
-        android:text="Sauvegarder ce parcours"
-        android:backgroundTint="#00A8A8"
-        android:textColor="@android:color/white" />
-
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Étapes du parcours"
+        android:text="Lieux du parcours"
         android:textStyle="bold"
         android:textSize="16sp"
-        android:layout_marginTop="16dp" />
+        android:layout_marginTop="8dp" />
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerSteps"
+        android:id="@+id/recycler_places_in_itinerary"
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"

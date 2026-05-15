@@ -1,7 +1,6 @@
-package com.example.traveling.TravelPath.Accueil
+package com.example.traveling.TravelPath.Parcours
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -12,11 +11,11 @@ class ItineraryAdapter(
     private val onItemClick: (Itinerary) -> Unit
 ) : RecyclerView.Adapter<ItineraryAdapter.ViewHolder>() {
 
-    inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val name: TextView = view.findViewById(R.id.itinerary_name)
-        val desc: TextView = view.findViewById(R.id.itinerary_desc)
-        val cost: TextView = view.findViewById(R.id.itinerary_cost)
-        val duration: TextView = view.findViewById(R.id.itinerary_duration)
+    class ViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
+        val name: TextView = itemView.findViewById(R.id.itinerary_name)
+        val desc: TextView = itemView.findViewById(R.id.itinerary_desc)
+        val cost: TextView = itemView.findViewById(R.id.itinerary_cost)
+        val duration: TextView = itemView.findViewById(R.id.itinerary_duration)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
