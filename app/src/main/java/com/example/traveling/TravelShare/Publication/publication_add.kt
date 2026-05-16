@@ -20,6 +20,16 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import java.io.File
 import java.io.FileOutputStream
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+import androidx.lifecycle.lifecycleScope
+import com.google.firebase.Firebase
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import com.google.mlkit.vision.common.InputImage
+import com.google.mlkit.vision.label.ImageLabeling
+import com.google.mlkit.vision.label.defaults.ImageLabelerOptions
 
 class publication_add : Fragment(R.layout.fragment_publication_add) {
 
@@ -36,6 +46,7 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
     private lateinit var btnPublish: MaterialButton
     private lateinit var progressBar: ProgressBar
     private lateinit var layoutAddLocation: LinearLayout
+    private lateinit var btnAIContainer: LinearLayout
 
     private var selectedLocation: String? = null
     private var selectedMediaUri: Uri? = null
@@ -43,8 +54,13 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
     private var selectedGroupId: String? = null
     private var selectedGroupName: String? = null
 
+    // Coordonnées pour le filtre rayon
+    private var selectedLatitude: Double = 0.0
+    private var selectedLongitude: Double = 0.0
+
     private val firestore = FirebaseFirestore.getInstance()
     private val auth      = FirebaseAuth.getInstance()
+
 
     private val pickImage = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let {
@@ -71,6 +87,7 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
         btnPublish        = view.findViewById(R.id.btnPublish)
         progressBar       = view.findViewById(R.id.progressBar)
         layoutAddLocation = view.findViewById(R.id.layoutAddLocation)
+        btnAIContainer = view.findViewById(R.id.btnAIContainer)
 
         val preSelectedGroupId   = arguments?.getString("groupId")   ?: activity?.intent?.getStringExtra("groupId")
         val preSelectedGroupName = arguments?.getString("groupName") ?: activity?.intent?.getStringExtra("groupName")
@@ -108,13 +125,16 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
             val currentUserId = auth.currentUser?.uid ?: return@observe
 
-            // Capturer les valeurs MAINTENANT avant popBackStack
             val capturedVisibility = selectedVisibility
             val capturedGroupId    = selectedGroupId
             val capturedGroupName  = selectedGroupName
             val capturedTags       = getSelectedTags()
             val capturedLocation = tvLocationLabel.text.toString().trim()
                 .takeIf { it.isNotEmpty() && it != "Ajouter un lieu" } ?: ""
+
+            // Récupérer les coordonnées pour l'envoi
+            val capturedLat = selectedLatitude
+            val capturedLng = selectedLongitude
 
             firestore.collection("users").document(currentUserId).get()
                 .addOnSuccessListener { userDoc ->
@@ -125,7 +145,6 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
                     when (capturedVisibility) {
                         "group" -> {
                             if (capturedGroupId != null) {
-                                // Notif 1 : publication dans le groupe
                                 sendGroupPostNotification(
                                     groupId    = capturedGroupId,
                                     groupName  = capturedGroupName,
@@ -133,7 +152,6 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
                                     senderName = senderName,
                                     senderId   = currentUserId
                                 )
-                                // Notif 2 : tag et/ou lieu (seulement si au moins un est présent)
                                 val hasTag      = capturedTags.isNotEmpty()
                                 val hasLocation = capturedLocation.isNotEmpty()
                                 if (hasTag || hasLocation) {
@@ -149,7 +167,6 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
                             }
                         }
                         "public" -> {
-                            // Notif unique avec tag + lieu pour tous les users
                             sendPublicPostNotification(
                                 postId       = postId,
                                 senderName   = senderName,
@@ -275,6 +292,7 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
         Log.d("Publish", "📸 $imagePath | 📝 $title | 📍 $locationName")
         Log.d("Publish", "👁️ $selectedVisibility | 🏷️ $tags | 👥 $selectedGroupId")
+        Log.d("Publish", "📍 Coordonnées: lat=$selectedLatitude, lng=$selectedLongitude")
 
         viewModel.publishPost(
             imagePath    = imagePath,
@@ -283,7 +301,9 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
             locationName = locationName,
             isPublic     = isPublic,
             groupId      = selectedGroupId ?: "",
-            tags         = tags
+            tags         = tags,
+            latitude     = selectedLatitude,
+            longitude    = selectedLongitude
         )
     }
 
@@ -318,6 +338,9 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
     private fun setupListeners() {
         btnPublish.setOnClickListener { publishPost() }
+        btnAIContainer.setOnClickListener {
+            generateDescriptionWithAI()
+        }
         btnSelectImage.setOnClickListener { pickImage.launch("image/*") }
         flMediaPreview.setOnClickListener { pickImage.launch("image/*") }
         tvVisibilityLabel.setOnClickListener {
@@ -336,8 +359,11 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
             val lng     = result.data?.getDoubleExtra(ActivityLocationPicker.EXTRA_LNG, 0.0) ?: 0.0
             val address = result.data?.getStringExtra(ActivityLocationPicker.EXTRA_ADDRESS) ?: ""
             if (lat != 0.0 && lng != 0.0) {
-                selectedLocation     = address
+                selectedLocation = address
+                selectedLatitude = lat      //Sauvegarde la latitude
+                selectedLongitude = lng     //Sauvegarde la longitude
                 tvLocationLabel.text = address
+                Log.d("Location", "📍 Lieu sélectionné: $address (lat=$lat, lng=$lng)")
             }
         }
     }
@@ -348,10 +374,6 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
     // ==================== NOTIFICATIONS ====================
 
-    /**
-     * GROUPE - Notif 1 : "X a publié dans le groupe Y"
-     * → envoyée à tous les membres du groupe sauf l'auteur
-     */
     private fun sendGroupPostNotification(
         groupId: String,
         groupName: String?,
@@ -391,18 +413,10 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
                         .document(memberId)
                         .collection("notifications")
                         .add(notif)
-                        .addOnSuccessListener { Log.d("NOTIF", "✅ Notif groupe → $memberId") }
-                        .addOnFailureListener { e -> Log.e("NOTIF", "❌ $memberId : ${e.message}") }
                 }
             }
-            .addOnFailureListener { e -> Log.e("NOTIF", "❌ membres groupe: ${e.message}") }
     }
 
-    /**
-     * GROUPE - Notif 2 : tag et/ou lieu
-     * → envoyée uniquement aux membres du groupe (pas à tout le monde)
-     * → seulement si tag ou lieu présent
-     */
     private fun sendTagLocationNotificationToGroupMembers(
         groupId: String,
         postId: String,
@@ -421,7 +435,7 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
                 "$senderName a publié une photo de type \"$firstTag\""
             hasLocation ->
                 "$senderName a publié une photo depuis $locationName"
-            else -> return  // Rien à envoyer
+            else -> return
         }
 
         val title = when {
@@ -433,8 +447,6 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
             firstTag != null -> "new_post_in_tag"
             else             -> "new_post_in_location"
         }
-
-        Log.d("NOTIF", "Notif 2 tag/lieu groupe → type=$notifType msg=$message")
 
         firestore.collection("groups")
             .document(groupId)
@@ -465,17 +477,10 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
                         .document(memberId)
                         .collection("notifications")
                         .add(notif)
-                        .addOnSuccessListener { Log.d("NOTIF", "✅ Notif tag/lieu groupe → $memberId") }
-                        .addOnFailureListener { e -> Log.e("NOTIF", "❌ $memberId : ${e.message}") }
                 }
             }
-            .addOnFailureListener { e -> Log.e("NOTIF", "❌ membres tag/lieu: ${e.message}") }
     }
 
-    /**
-     * PUBLIC - Notif unique avec tag + lieu
-     * → envoyée à TOUS les users sauf l'auteur
-     */
     private fun sendPublicPostNotification(
         postId: String,
         senderName: String,
@@ -509,8 +514,6 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
             else             -> "new_post_public"
         }
 
-        Log.d("NOTIF", "Notif public → type=$notifType msg=$message")
-
         firestore.collection("users").get()
             .addOnSuccessListener { users ->
                 for (userDoc in users) {
@@ -537,10 +540,49 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
                         .document(userId)
                         .collection("notifications")
                         .add(notif)
-                        .addOnSuccessListener { Log.d("NOTIF", "✅ Notif public → $userId") }
-                        .addOnFailureListener { e -> Log.e("NOTIF", "❌ $userId : ${e.message}") }
                 }
             }
-            .addOnFailureListener { e -> Log.e("NOTIF", "❌ users: ${e.message}") }
+    }
+
+
+    private fun generateDescriptionWithAI() {
+        val imageUri = selectedMediaUri
+        if (imageUri == null) {
+            Toast.makeText(requireContext(), "📸 Sélectionnez d'abord une image", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        progressBar.visibility = View.VISIBLE
+
+        try {
+            val image = InputImage.fromFilePath(requireContext(), imageUri)
+
+            val labeler = ImageLabeling.getClient(ImageLabelerOptions.DEFAULT_OPTIONS)
+
+            labeler.process(image)
+                .addOnSuccessListener { labels ->
+                    val tags = labels.map { it.text }.take(4)
+
+                    // Générer une phrase complète
+                    val description = when (tags.size) {
+                        0 -> "📸 Une belle photo de voyage"
+                        1 -> "📸 Superbe photo de ${tags[0]}"
+                        2 -> "📸 Magnifique photo de ${tags[0]} et ${tags[1]}"
+                        3 -> "📸 Magnifique photo de ${tags[0]}, ${tags[1]} et ${tags[2]}"
+                        else -> "📸 Magnifique photo de ${tags[0]}, ${tags[1]}, ${tags[2]} et ${tags[3]}"
+                    }
+
+                    etDescription.setText(description)
+                    progressBar.visibility = View.GONE
+                    Toast.makeText(requireContext(), "✨ Description générée !", Toast.LENGTH_SHORT).show()
+                }
+                .addOnFailureListener { e ->
+                    progressBar.visibility = View.GONE
+                    Toast.makeText(requireContext(), "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+        } catch (e: Exception) {
+            progressBar.visibility = View.GONE
+            Toast.makeText(requireContext(), "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+        }
     }
 }

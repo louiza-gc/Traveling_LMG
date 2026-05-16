@@ -74,6 +74,9 @@ class photo_post : AppCompatActivity() {
     private lateinit var tvReportCount: TextView
     private var reportsCount: Int = 0
 
+    // Tags récupérés depuis Firestore
+    private var currentTags: List<String> = emptyList()
+
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
     private var isLiked = false
@@ -214,6 +217,9 @@ class photo_post : AppCompatActivity() {
                     reportsCount = (data?.get("reportsCount") as? Long)?.toInt() ?: 0
                     timestamp = (data?.get("timestamp") as? Long) ?: System.currentTimeMillis()
 
+                    // Récupérer les tags directement depuis Firestore
+                    currentTags = (data?.get("tags") as? List<*>)?.map { it.toString() } ?: emptyList()
+
                     isDataLoaded = true
                     displayData()
                     checkIfLiked()
@@ -353,7 +359,7 @@ class photo_post : AppCompatActivity() {
         }
 
         btnSimilarPhotos.setOnClickListener {
-            Toast.makeText(this, "Photos similaires", Toast.LENGTH_SHORT).show()
+            findSimilarPhotos()
         }
 
         btnSendComment.setOnClickListener {
@@ -581,5 +587,67 @@ class photo_post : AppCompatActivity() {
                         }
                 }
             }
+    }
+
+    // ==================== PHOTOS SIMILAIRES ====================
+
+    private fun findSimilarPhotos() {
+        if (currentTags.isEmpty()) {
+            Toast.makeText(this, "🏷️ Aucun tag pour trouver des photos similaires", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        progressBar.visibility = View.VISIBLE
+
+        firestore.collection("photos")
+            .whereArrayContainsAny("tags", currentTags)
+            .limit(20)
+            .get()
+            .addOnSuccessListener { result ->
+                val similarPhotos = mutableListOf<SimilarPhotoItem>()
+
+                for (doc in result) {
+                    if (doc.id != postId) {
+                        val imageUrl = doc.getString("photoPath") ?: ""
+                        if (imageUrl.isNotEmpty()) {
+                            similarPhotos.add(SimilarPhotoItem(doc.id, imageUrl))
+                        }
+                    }
+                }
+
+                progressBar.visibility = View.GONE
+
+                if (similarPhotos.isEmpty()) {
+                    Toast.makeText(this, "🖼️ Aucune photo similaire trouvée", Toast.LENGTH_SHORT).show()
+                } else {
+                    showSimilarPhotosDialog(similarPhotos)
+                }
+            }
+            .addOnFailureListener { e ->
+                progressBar.visibility = View.GONE
+                Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun showSimilarPhotosDialog(photos: List<SimilarPhotoItem>) {
+        val dialog = android.app.Dialog(this)
+        dialog.setContentView(R.layout.dialog_similar_photos)
+        dialog.window?.setLayout(
+            android.view.ViewGroup.LayoutParams.MATCH_PARENT,
+            android.view.ViewGroup.LayoutParams.WRAP_CONTENT
+        )
+
+        val rvPhotos = dialog.findViewById<RecyclerView>(R.id.rvSimilarPhotos)
+        rvPhotos.layoutManager = LinearLayoutManager(this, LinearLayoutManager.HORIZONTAL, false)
+
+        val adapter = SimilarPhotosAdapter(photos) { photo ->
+            dialog.dismiss()
+            val intent = Intent(this, photo_post::class.java)
+            intent.putExtra("post_id", photo.id)
+            startActivity(intent)
+        }
+        rvPhotos.adapter = adapter
+
+        dialog.show()
     }
 }

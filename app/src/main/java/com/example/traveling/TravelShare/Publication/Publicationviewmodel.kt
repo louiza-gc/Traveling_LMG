@@ -31,7 +31,9 @@ class PublicationViewModel : ViewModel() {
         locationName: String,
         isPublic: Boolean,
         tags: List<String>,
-        groupId: String = ""
+        groupId: String = "",
+        latitude: Double = 0.0,
+        longitude: Double = 0.0
     ) {
         val user = auth.currentUser ?: run {
             _error.value = "Utilisateur non connecté"
@@ -56,8 +58,8 @@ class PublicationViewModel : ViewModel() {
                     "title"          to title,
                     "caption"        to description,
                     "locationName"   to locationName,
-                    "locationLat"    to 0.0,
-                    "locationLng"    to 0.0,
+                    "locationLat"    to latitude,
+                    "locationLng"    to longitude,
                     "isPublic"       to isPublic,
                     "groupId"        to groupId,
                     "tags"           to tags.map { it.lowercase() },

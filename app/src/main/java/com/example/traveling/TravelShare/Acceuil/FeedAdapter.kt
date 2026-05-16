@@ -24,9 +24,10 @@ data class PublicationItem(
     val title: String = "",
     val description: String = "",
     val timestamp: Long = 0,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val latitude: Double = 0.0,
+    val longitude: Double = 0.0
 )
-
 class FeedAdapter(
     private var publications: List<PublicationItem>,
     private val onLikeClick: (PublicationItem, Int) -> Unit,

@@ -3,6 +3,7 @@ package com.example.traveling.TravelShare.Acceuil
 import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.location.Geocoder
 import android.os.Bundle
 import android.speech.RecognizerIntent
 import android.view.View
@@ -20,6 +21,8 @@ import com.example.traveling.R
 import com.example.traveling.TravelShare.feed.FeedAdapter
 import com.example.traveling.TravelShare.feed.PublicationItem
 import com.google.firebase.firestore.FirebaseFirestore
+import java.util.Locale
+import android.util.Log
 
 class page_feed : Fragment(R.layout.fragment_page_feed) {
 
@@ -67,8 +70,10 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
                 Toast.makeText(requireContext(), "Like: ${item.authorName}", Toast.LENGTH_SHORT).show()
             },
             onItemClick = { item ->
+                //  Envoie l'ID ET les tags de la publication
                 val intent = Intent(requireContext(), photo_post::class.java).apply {
                     putExtra("post_id", item.id)
+                    putExtra("tags", item.tags.joinToString(","))  // ← AJOUTE CETTE LIGNE
                 }
                 startActivity(intent)
             }
@@ -106,7 +111,9 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
                         title = data["title"] as? String ?: "",
                         description = data["caption"] as? String ?: "",
                         timestamp = (data["timestamp"] as? Long) ?: System.currentTimeMillis(),
-                        tags = (data["tags"] as? List<*>)?.map { it.toString() } ?: emptyList()
+                        tags = (data["tags"] as? List<*>)?.map { it.toString() } ?: emptyList(),
+                        latitude = (data["locationLat"] as? Double) ?: 0.0,
+                        longitude = (data["locationLng"] as? Double) ?: 0.0
                     )
                     publications.add(publication)
                 }
@@ -140,7 +147,6 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
     private fun setupVoiceSearch() {
         btnMic.visibility = View.VISIBLE
         btnMic.setOnClickListener {
-            // Vérifier la permission microphone
             if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO)
                 != PackageManager.PERMISSION_GRANTED) {
                 ActivityCompat.requestPermissions(requireActivity(),
@@ -148,7 +154,6 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
                 return@setOnClickListener
             }
 
-            // Lancer la reconnaissance vocale
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
             intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
             intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "🔎 Parlez votre recherche...")
@@ -159,7 +164,6 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (requestCode == 200 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            // Permission accordée, relancer la recherche vocale
             btnMic.performClick()
         } else if (requestCode == 200) {
             Toast.makeText(requireContext(), "Permission micro requise pour la recherche vocale", Toast.LENGTH_SHORT).show()
@@ -169,7 +173,6 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
 
-        // Résultat de la recherche vocale
         if (requestCode == REQUEST_VOICE_SEARCH && resultCode == Activity.RESULT_OK) {
             val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             val spokenText = result?.getOrNull(0) ?: ""
@@ -180,7 +183,6 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
             }
         }
 
-        // Résultat des filtres
         if (requestCode == REQUEST_FILTERS && resultCode == Activity.RESULT_OK) {
             val filters = data?.getSerializableExtra("filters") as? FilterOptions
             applyFilters(filters)
@@ -222,20 +224,29 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
             return
         }
 
+        Log.d("Filters", "=== APPLY FILTERS ===")
+        Log.d("Filters", "Lieu: '${filters.location}'")
+        Log.d("Filters", "Rayon: '${filters.radius}'")
+        Log.d("Filters", "Auteur: '${filters.author}'")
+        Log.d("Filters", "Types: ${filters.placeTypes}")
+
         var filtered = allPublications
 
+        // Filtre par auteur
         if (filters.author.isNotEmpty()) {
             filtered = filtered.filter {
                 it.authorName.equals(filters.author, ignoreCase = true)
             }
         }
 
-        if (filters.location.isNotEmpty()) {
+        // Filtre par lieu (texte normal, PAS rayon)
+        if (filters.location.isNotEmpty() && filters.radius.isEmpty()) {
             filtered = filtered.filter {
                 it.location.lowercase().contains(filters.location.lowercase())
             }
         }
 
+        // Filtre par tags
         if (filters.placeTypes.isNotEmpty()) {
             filtered = filtered.filter { publication ->
                 filters.placeTypes.any { filterTag ->
@@ -246,6 +257,7 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
             }
         }
 
+        // Filtre par dates
         if (filters.startDate > 0) {
             filtered = filtered.filter { it.timestamp >= filters.startDate }
         }
@@ -253,12 +265,80 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
             filtered = filtered.filter { it.timestamp <= filters.endDate }
         }
 
-        if (filters.radius.isNotEmpty()) {
-            Toast.makeText(requireContext(), "Filtre rayon à venir", Toast.LENGTH_SHORT).show()
+        //  FILTRE PAR RAYON - SEULEMENT si LIEU est REMPLI
+        if (filters.radius.isNotEmpty() && filters.location.isNotEmpty()) {
+            val radiusValue = filters.radius.replace(" km", "").toIntOrNull()
+            if (radiusValue != null && radiusValue > 0) {
+                filterByRadius(filters.location, radiusValue) { radiusFiltered ->
+                    val finalFiltered = filtered.filter { pub ->
+                        radiusFiltered.any { it.id == pub.id }
+                    }
+                    feedAdapter.updateData(finalFiltered)
+                    showFilterResultMessage(finalFiltered)
+                }
+                return
+            }
         }
 
+        // Si pas de filtre rayon, mettre à jour directement
         feedAdapter.updateData(filtered)
+        showFilterResultMessage(filtered)
+    }
 
+    // FONCTION FILTRE PAR RAYON
+    private fun filterByRadius(locationName: String, radiusKm: Int, callback: (List<PublicationItem>) -> Unit) {
+        val geocoder = Geocoder(requireContext(), Locale.getDefault())
+
+        try {
+            val addresses = geocoder.getFromLocationName(locationName, 1)
+
+            if (addresses.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "📍 Lieu '$locationName' non trouvé", Toast.LENGTH_SHORT).show()
+                callback(emptyList())
+                return
+            }
+
+            val centerLat = addresses[0].latitude
+            val centerLng = addresses[0].longitude
+
+            // Filtrer les publications qui ont des coordonnées valides
+            val filtered = allPublications.filter { publication ->
+                // Vérifier que les coordonnées existent et sont valides
+                if (publication.latitude == 0.0 && publication.longitude == 0.0) {
+                    return@filter false
+                }
+                val distance = calculateDistance(centerLat, centerLng, publication.latitude, publication.longitude)
+                distance <= radiusKm
+            }
+
+            if (filtered.isEmpty()) {
+                Toast.makeText(requireContext(), "📍 Aucune publication dans un rayon de $radiusKm km autour de $locationName", Toast.LENGTH_LONG).show()
+            } else {
+                Toast.makeText(requireContext(), "📍 ${filtered.size} publication(s) dans un rayon de $radiusKm km", Toast.LENGTH_LONG).show()
+            }
+
+            callback(filtered)
+
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(requireContext(), "Erreur de géolocalisation", Toast.LENGTH_SHORT).show()
+            callback(emptyList())
+        }
+    }
+
+    // CALCUL DE DISTANCE (formule de Haversine)
+    private fun calculateDistance(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {
+        val R = 6371 // Rayon de la Terre en km
+        val dLat = Math.toRadians(lat2 - lat1)
+        val dLon = Math.toRadians(lon2 - lon1)
+        val a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2)
+        val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+        return R * c
+    }
+
+    private fun showFilterResultMessage(filtered: List<PublicationItem>) {
         if (filtered.isEmpty()) {
             Toast.makeText(requireContext(), "Aucun résultat avec ces filtres", Toast.LENGTH_SHORT).show()
         } else {
