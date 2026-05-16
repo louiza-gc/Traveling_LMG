@@ -1,5 +1,7 @@
 package com.example.traveling.TravelShare.Acceuil
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.Button
@@ -109,7 +111,7 @@ class photo_post : AppCompatActivity() {
         )
         rvComments.layoutManager = LinearLayoutManager(this)
         rvComments.adapter = commentAdapter
-        rvComments.isNestedScrollingEnabled = false  // ← ajoute juste ça
+        rvComments.isNestedScrollingEnabled = false
     }
 
     private fun loadComments() {
@@ -137,7 +139,6 @@ class photo_post : AppCompatActivity() {
                 }
                 commentAdapter.updateComments(commentsList)
 
-                // Mettre à jour le compteur de commentaires si nécessaire
                 if (commentsList.size != commentsCount) {
                     commentsCount = commentsList.size
                     tvCommentCount.text = formatCount(commentsCount)
@@ -157,7 +158,6 @@ class photo_post : AppCompatActivity() {
             return
         }
 
-        // Récupérer les infos de l'utilisateur
         firestore.collection("users")
             .document(userId)
             .get()
@@ -178,7 +178,6 @@ class photo_post : AppCompatActivity() {
                     .collection("comments")
                     .add(commentData)
                     .addOnSuccessListener {
-                        // Mettre à jour le compteur de commentaires
                         firestore.collection("photos")
                             .document(postId)
                             .update("commentsCount", FieldValue.increment(1))
@@ -259,6 +258,12 @@ class photo_post : AppCompatActivity() {
         rvComments = findViewById(R.id.rvComments)
         etNewComment = findViewById(R.id.etNewComment)
         btnSendComment = findViewById(R.id.btnSendComment)
+
+        // Désactiver les boutons d'itinéraire par défaut
+        btnGenerateRoute.isEnabled = false
+        btnOpenRoute.isEnabled = false
+        btnGenerateRoute.alpha = 0.5f
+        btnOpenRoute.alpha = 0.5f
     }
 
     private fun displayData() {
@@ -289,6 +294,13 @@ class photo_post : AppCompatActivity() {
             else -> dateText
         }
 
+        // Activer les boutons d'itinéraire si lieu présent
+        val hasValidLocation = location.isNotEmpty() && location != "Ajouter un lieu"
+        btnGenerateRoute.isEnabled = hasValidLocation
+        btnOpenRoute.isEnabled = hasValidLocation
+        btnGenerateRoute.alpha = if (hasValidLocation) 1f else 0.5f
+        btnOpenRoute.alpha = if (hasValidLocation) 1f else 0.5f
+
         // Description
         if (description.isNotEmpty()) {
             tvPostDescription.text = description
@@ -317,7 +329,6 @@ class photo_post : AppCompatActivity() {
         }
 
         btnComment.setOnClickListener {
-            // Faire défiler jusqu'aux commentaires
             rvComments.smoothScrollToPosition(commentsList.size)
         }
 
@@ -331,15 +342,14 @@ class photo_post : AppCompatActivity() {
 
         btnReport.setOnClickListener {
             showReportDialog()
-            Toast.makeText(this, "Signalement", Toast.LENGTH_SHORT).show()
         }
 
         btnGenerateRoute.setOnClickListener {
-            Toast.makeText(this, "Génération de parcours", Toast.LENGTH_SHORT).show()
+            openMapsForLocation()
         }
 
         btnOpenRoute.setOnClickListener {
-            Toast.makeText(this, "Ouvrir l'itinéraire", Toast.LENGTH_SHORT).show()
+            openMapsForLocation()
         }
 
         btnSimilarPhotos.setOnClickListener {
@@ -348,6 +358,24 @@ class photo_post : AppCompatActivity() {
 
         btnSendComment.setOnClickListener {
             sendComment()
+        }
+    }
+
+    private fun openMapsForLocation() {
+        if (location.isEmpty() || location == "Ajouter un lieu") {
+            Toast.makeText(this, "📍 Aucun lieu associé à cette publication", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            val encodedLocation = Uri.encode(location)
+            val uri = Uri.parse("https://www.google.com/maps/search/?api=1&query=$encodedLocation")
+
+            val intent = Intent(Intent.ACTION_VIEW, uri)
+            intent.setPackage("com.google.android.apps.maps")
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(this, "Impossible d'ouvrir Maps", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -369,7 +397,6 @@ class photo_post : AppCompatActivity() {
         val userId = auth.currentUser?.uid ?: return
 
         if (isLiked) {
-            // Unlike
             firestore.collection("photos")
                 .document(postId)
                 .collection("likes")
@@ -386,7 +413,6 @@ class photo_post : AppCompatActivity() {
                     updateLikedByText(likesCount)
                 }
         } else {
-            // Like
             val likeData = hashMapOf(
                 "userId" to userId,
                 "timestamp" to System.currentTimeMillis()
@@ -526,7 +552,6 @@ class photo_post : AppCompatActivity() {
             return
         }
 
-        // Vérifier si l'utilisateur a déjà signalé cette publication
         firestore.collection("photos")
             .document(postId)
             .collection("reports")
@@ -536,7 +561,6 @@ class photo_post : AppCompatActivity() {
                 if (document.exists()) {
                     Toast.makeText(this, "Vous avez déjà signalé cette publication", Toast.LENGTH_SHORT).show()
                 } else {
-                    // Ajouter le signalement
                     val reportData = hashMapOf(
                         "userId" to userId,
                         "reason" to reason,
@@ -549,10 +573,9 @@ class photo_post : AppCompatActivity() {
                         .document(userId)
                         .set(reportData)
                         .addOnSuccessListener {
-                            // Incrémenter le compteur de signalements
                             firestore.collection("photos")
                                 .document(postId)
-                                .update("reportsCount", com.google.firebase.firestore.FieldValue.increment(1))
+                                .update("reportsCount", FieldValue.increment(1))
 
                             Toast.makeText(this, "Merci, signalement envoyé", Toast.LENGTH_SHORT).show()
                         }

@@ -2,18 +2,21 @@ package com.example.traveling.TravelShare.Acceuil
 
 import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
+import android.speech.RecognizerIntent
 import android.view.View
 import android.widget.EditText
 import android.widget.ImageButton
 import android.widget.ProgressBar
 import android.widget.Toast
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 import com.example.traveling.R
-import com.example.traveling.TravelShare.Acceuil.photo_post
 import com.example.traveling.TravelShare.feed.FeedAdapter
 import com.example.traveling.TravelShare.feed.PublicationItem
 import com.google.firebase.firestore.FirebaseFirestore
@@ -31,6 +34,10 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
     private val firestore = FirebaseFirestore.getInstance()
     private var allPublications = listOf<PublicationItem>()
 
+    companion object {
+        private const val REQUEST_FILTERS = 1001
+        private const val REQUEST_VOICE_SEARCH = 1002
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -44,6 +51,7 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
 
         setupRecyclerView()
         setupSearch()
+        setupVoiceSearch()
         setupMenu()
         loadPublications()
 
@@ -59,7 +67,6 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
                 Toast.makeText(requireContext(), "Like: ${item.authorName}", Toast.LENGTH_SHORT).show()
             },
             onItemClick = { item ->
-                // Envoie juste l'ID de la publication
                 val intent = Intent(requireContext(), photo_post::class.java).apply {
                     putExtra("post_id", item.id)
                 }
@@ -84,7 +91,6 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
                     val data = doc.data
                     val isPublic = data["isPublic"] as? Boolean ?: true
 
-                    // Ignorer les publications non publiques
                     if (!isPublic) continue
 
                     val publication = PublicationItem(
@@ -124,18 +130,62 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
     private fun setupSearch() {
         etSearch.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 searchPublications(s.toString())
             }
-
             override fun afterTextChanged(s: android.text.Editable?) {}
         })
-
-        // Désactiver ou cacher le bouton micro si pas utilisé
-        btnMic.visibility = View.GONE
     }
 
+    private fun setupVoiceSearch() {
+        btnMic.visibility = View.VISIBLE
+        btnMic.setOnClickListener {
+            // Vérifier la permission microphone
+            if (ContextCompat.checkSelfPermission(requireContext(), android.Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+                ActivityCompat.requestPermissions(requireActivity(),
+                    arrayOf(android.Manifest.permission.RECORD_AUDIO), 200)
+                return@setOnClickListener
+            }
+
+            // Lancer la reconnaissance vocale
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM)
+            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "🔎 Parlez votre recherche...")
+            startActivityForResult(intent, REQUEST_VOICE_SEARCH)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 200 && grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            // Permission accordée, relancer la recherche vocale
+            btnMic.performClick()
+        } else if (requestCode == 200) {
+            Toast.makeText(requireContext(), "Permission micro requise pour la recherche vocale", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+
+        // Résultat de la recherche vocale
+        if (requestCode == REQUEST_VOICE_SEARCH && resultCode == Activity.RESULT_OK) {
+            val result = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
+            val spokenText = result?.getOrNull(0) ?: ""
+            if (spokenText.isNotEmpty()) {
+                etSearch.setText(spokenText)
+                searchPublications(spokenText)
+                Toast.makeText(requireContext(), "🔍 Recherche : $spokenText", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        // Résultat des filtres
+        if (requestCode == REQUEST_FILTERS && resultCode == Activity.RESULT_OK) {
+            val filters = data?.getSerializableExtra("filters") as? FilterOptions
+            applyFilters(filters)
+        }
+    }
 
     private fun searchPublications(query: String) {
         if (query.isEmpty()) {
@@ -145,13 +195,11 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
 
         val searchTerm = query.lowercase().trim()
         val filtered = allPublications.filter { publication ->
-            publication.title.lowercase().contains(searchTerm) ||           // Titre
-                    publication.authorName.lowercase().contains(searchTerm) ||     // Auteur
-                    publication.location.lowercase().contains(searchTerm) ||       // Lieu
-                    publication.description.lowercase().contains(searchTerm) ||    // Description
-                    publication.tags.any { tag ->                                  // Tags (Types)
-                        tag.lowercase().contains(searchTerm)
-                    }
+            publication.title.lowercase().contains(searchTerm) ||
+                    publication.authorName.lowercase().contains(searchTerm) ||
+                    publication.location.lowercase().contains(searchTerm) ||
+                    publication.description.lowercase().contains(searchTerm) ||
+                    publication.tags.any { tag -> tag.lowercase().contains(searchTerm) }
         }
 
         feedAdapter.updateData(filtered)
@@ -164,20 +212,9 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
     private fun setupMenu() {
         btnMenu.setOnClickListener {
             val intent = Intent(requireContext(), page_filters::class.java)
-            // Passer les filtres actuels si besoin
             startActivityForResult(intent, REQUEST_FILTERS)
         }
     }
-
-    // Pour recevoir les résultats des filtres
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode == REQUEST_FILTERS && resultCode == Activity.RESULT_OK) {
-            val filters = data?.getSerializableExtra("filters") as? FilterOptions
-            applyFilters(filters)
-        }
-    }
-
 
     private fun applyFilters(filters: FilterOptions?) {
         if (filters == null) {
@@ -187,32 +224,28 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
 
         var filtered = allPublications
 
-        // Filtre par auteur (insensible à la casse)
         if (filters.author.isNotEmpty()) {
             filtered = filtered.filter {
                 it.authorName.equals(filters.author, ignoreCase = true)
             }
         }
 
-        // Filtre par lieu (insensible à la casse)
         if (filters.location.isNotEmpty()) {
             filtered = filtered.filter {
                 it.location.lowercase().contains(filters.location.lowercase())
             }
         }
 
-        // Filtre par types de lieu (tags - insensible à la casse)
         if (filters.placeTypes.isNotEmpty()) {
             filtered = filtered.filter { publication ->
                 filters.placeTypes.any { filterTag ->
                     publication.tags.any { tag ->
-                        tag.equals(filterTag, ignoreCase = true)  // ✅ Ignore maj/min
+                        tag.equals(filterTag, ignoreCase = true)
                     }
                 }
             }
         }
 
-        // Filtre par plage de dates
         if (filters.startDate > 0) {
             filtered = filtered.filter { it.timestamp >= filters.startDate }
         }
@@ -220,9 +253,7 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
             filtered = filtered.filter { it.timestamp <= filters.endDate }
         }
 
-        // Filtre par rayon (à implémenter avec géolocalisation)
         if (filters.radius.isNotEmpty()) {
-            // TODO: Implémenter le filtre par rayon avec géolocalisation
             Toast.makeText(requireContext(), "Filtre rayon à venir", Toast.LENGTH_SHORT).show()
         }
 
@@ -233,9 +264,5 @@ class page_feed : Fragment(R.layout.fragment_page_feed) {
         } else {
             Toast.makeText(requireContext(), "${filtered.size} résultat(s) trouvé(s)", Toast.LENGTH_SHORT).show()
         }
-    }
-
-    companion object {
-        private const val REQUEST_FILTERS = 1001
     }
 }
