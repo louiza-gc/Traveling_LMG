@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="#FFFFFF">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="🏷️ Tags suivis"
+        android:textSize="20sp"
+        android:textStyle="bold"
+        android:textColor="#1A1A1A"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Sélectionne les types de publications que tu veux recevoir"
+        android:textSize="13sp"
+        android:textColor="#888"
+        android:layout_marginTop="4dp"
+        android:layout_marginBottom="16dp"/>
+
+    <!-- Chips des tags -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupFollowedTags"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="24dp"/>
+
+    <!-- Bouton confirmer -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnConfirmTags"
+        android:layout_width="match_parent"
+        android:layout_height="48dp"
+        android:text="✅ Confirmer"
+        android:textColor="#FFFFFF"
+        android:backgroundTint="#1A73E8"/>
+
+</LinearLayout>

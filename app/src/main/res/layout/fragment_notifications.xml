@@ -39,6 +39,17 @@
             android:textColor="#1A1A1A"
             android:layout_marginTop="4dp"/>
 
+        <!-- Bouton Tags suivis -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnFollowedTags"
+            android:layout_width="wrap_content"
+            android:layout_height="36dp"
+            android:text="🏷️ Tags suivis"
+            android:textSize="13sp"
+            android:layout_marginTop="12dp"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:textColor="#1A73E8"/>
+
     </LinearLayout>
 
     <!-- Liste des notifications -->
