@@ -1,7 +1,6 @@
 package com.example.traveling.TravelPath.Accueil
 
 import android.view.LayoutInflater
-import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -17,7 +16,7 @@ class ItemAdapter(
     private val onAddClick: (Item) -> Unit
 ) : RecyclerView.Adapter<ItemAdapter.ViewHolder>() {
 
-    class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+    class ViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
         val image: ImageView = itemView.findViewById(R.id.image)
         val title: TextView = itemView.findViewById(R.id.title)
         val city: TextView = itemView.findViewById(R.id.city)
@@ -38,30 +37,25 @@ class ItemAdapter(
         holder.city.text = item.city
         holder.country.text = item.country
 
-        // Image
-        if (item.imageUrl.isNotBlank()) {
-            Glide.with(holder.itemView.context)
-                .load(item.imageUrl)
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .error(android.R.drawable.ic_menu_report_image)
-                .into(holder.image)
-        } else {
-            holder.image.setImageResource(android.R.drawable.ic_menu_gallery)
-        }
+        Glide.with(holder.itemView.context)
+            .load(item.imageUrl)
+            .placeholder(android.R.drawable.ic_menu_gallery)
+            .error(android.R.drawable.ic_menu_report_image)
+            .into(holder.image)
 
-        // Icône favori (cœur vide ou plein)
+        // Icône favori (cœur vide/plein)
         val favoriteRes = if (item.isFavorite) R.drawable.ic_favorite_filled else R.drawable.ic_favorite_border
         holder.btnFavorite.setImageResource(favoriteRes)
 
-        // Clics
         holder.itemView.setOnClickListener { onItemClick(item) }
         holder.btnFavorite.setOnClickListener {
             onFavoriteClick(item)
-            // Mise à jour locale immédiate de l'état
             item.isFavorite = !item.isFavorite
             notifyItemChanged(position)
         }
-        holder.btnAdd.setOnClickListener { onAddClick(item) }
+        holder.btnAdd.setOnClickListener {
+            onAddClick(item)
+        }
     }
 
     override fun getItemCount() = items.size

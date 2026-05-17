@@ -14,6 +14,7 @@ class AutoItineraryActivity : AppCompatActivity() {
     private lateinit var etCity: EditText
     private lateinit var btnNext: Button
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_auto_itinerary)
@@ -21,6 +22,17 @@ class AutoItineraryActivity : AppCompatActivity() {
         etName = findViewById(R.id.etAutoName)
         etCity = findViewById(R.id.etAutoCity)
         btnNext = findViewById(R.id.btnNext)
+
+        // Récupérer les données envoyées par TravelShare
+        val preFilledName = intent.getStringExtra("itinerary_name")
+        val preFilledCity = intent.getStringExtra("city")
+
+        if (!preFilledName.isNullOrEmpty()) {
+            etName.setText(preFilledName)
+        }
+        if (!preFilledCity.isNullOrEmpty()) {
+            etCity.setText(preFilledCity)
+        }
 
         btnNext.setOnClickListener {
             val name = etName.text.toString().trim()

@@ -2,6 +2,7 @@ package com.example.traveling.TravelPath.Accueil
 
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -12,6 +13,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.traveling.R
+import com.example.traveling.TravelPath.Parcours.Itinerary
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 
 class FavoritesActivity : AppCompatActivity() {
@@ -24,7 +28,8 @@ class FavoritesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_favorites)
 
-        userId = intent.getStringExtra("userId") ?: ""
+        // Récupérer l'utilisateur (soit depuis l'intent, soit via FirebaseAuth)
+        userId = intent.getStringExtra("userId") ?: FirebaseAuth.getInstance().currentUser?.uid ?: ""
         val prefsName = if (userId.isNotEmpty()) "travelpath_${userId}" else "travelpath_guest"
         sharedPref = getSharedPreferences(prefsName, MODE_PRIVATE)
 
@@ -35,8 +40,8 @@ class FavoritesActivity : AppCompatActivity() {
     }
 
     private fun loadFavorites() {
-        val favoriteNames = sharedPref.getStringSet("favorites", emptySet()) ?: emptySet()
-        if (favoriteNames.isEmpty()) {
+        val favoriteIds = sharedPref.getStringSet("favorites", emptySet()) ?: emptySet()
+        if (favoriteIds.isEmpty()) {
             Toast.makeText(this, "Aucun favori", Toast.LENGTH_SHORT).show()
             finish()
             return
@@ -46,33 +51,48 @@ class FavoritesActivity : AppCompatActivity() {
             try {
                 PlaceRepository.init(applicationContext)
                 val allPlaces = PlaceRepository.loadAllPlaces()
-                val favoritePlaces = allPlaces.filter { it.name in favoriteNames }
+                val favoritePlaces = allPlaces.filter { it.id in favoriteIds }
+
                 val items = favoritePlaces.map { place ->
                     Item(
+                        id = place.id,
                         name = place.name,
-                        assetPath = "",
                         imageUrl = place.media.thumbnail,
                         city = place.location.city,
                         country = place.location.country,
-                        isFavorite = true
+                        isFavorite = true   // cœur rempli (rouge)
                     )
                 }
+
                 val adapter = ItemAdapter(
                     items = items,
                     onItemClick = { clickedItem ->
-                        val place = favoritePlaces.find { it.name == clickedItem.name }
+                        val place = favoritePlaces.find { it.id == clickedItem.id }
                         place?.let { showPlaceDialog(it) }
                     },
-                    onFavoriteClick = { item -> toggleFavorite(item.name) },
-                    onAddClick = { item -> addToSelection(item.name) }
+                    onFavoriteClick = { item -> removeFavorite(item.id) },  // retirer des favoris
+                    onAddClick = { item -> showAddToItineraryDialog(item.id) }
                 )
                 recycler.adapter = adapter
             } catch (e: Exception) {
                 Toast.makeText(this@FavoritesActivity, "Erreur de chargement", Toast.LENGTH_SHORT).show()
             }
         }
+        Log.d("FAVORI", "userId récupéré = $userId, prefsName = travelpath_${userId}")
+        Log.d("FAVORI", "Contenu favorites : ${sharedPref.getStringSet("favorites", emptySet())}")
     }
 
+    // Retirer un lieu des favoris
+    private fun removeFavorite(placeId: String) {
+        val favorites = sharedPref.getStringSet("favorites", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        if (favorites.remove(placeId)) {
+            sharedPref.edit().putStringSet("favorites", favorites).apply()
+            Toast.makeText(this, "Retiré des favoris", Toast.LENGTH_SHORT).show()
+            loadFavorites()  // rafraîchir la liste
+        }
+    }
+
+    // Afficher les détails d'un lieu (popup)
     private fun showPlaceDialog(place: Place) {
         val dialogView = layoutInflater.inflate(R.layout.activity_place_detail, null)
         dialogView.findViewById<TextView>(R.id.place_name).text = place.name
@@ -95,28 +115,57 @@ class FavoritesActivity : AppCompatActivity() {
             .show()
     }
 
-    private fun toggleFavorite(placeName: String) {
-        val favorites = sharedPref.getStringSet("favorites", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        if (favorites.contains(placeName)) {
-            favorites.remove(placeName)
-            Toast.makeText(this, "$placeName retiré des favoris", Toast.LENGTH_SHORT).show()
-        } else {
-            favorites.add(placeName)
-            Toast.makeText(this, "$placeName ajouté aux favoris", Toast.LENGTH_SHORT).show()
+    // Ajouter un lieu à un parcours existant (comme dans AccueilPath)
+    private fun showAddToItineraryDialog(placeId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid == null) {
+            Toast.makeText(this, "Connectez-vous pour ajouter à un parcours", Toast.LENGTH_SHORT).show()
+            return
         }
-        sharedPref.edit().putStringSet("favorites", favorites).apply()
-        // Recharger la liste des favoris
-        loadFavorites()
+        val db = FirebaseFirestore.getInstance()
+        db.collection("itineraries")
+            .whereEqualTo("createdBy", uid)
+            .get()
+            .addOnSuccessListener { result ->
+                val itineraries = result.documents.mapNotNull { doc ->
+                    Itinerary(
+                        id = doc.id,
+                        name = doc.getString("name") ?: "",
+                        description = doc.getString("description") ?: "",
+                        placeIds = (doc.get("placeIds") as? List<String>) ?: emptyList()
+                    )
+                }
+                if (itineraries.isEmpty()) {
+                    Toast.makeText(this, "Aucun parcours. Créez-en un d'abord.", Toast.LENGTH_SHORT).show()
+                    return@addOnSuccessListener
+                }
+                val names = itineraries.map { it.name }.toTypedArray()
+                AlertDialog.Builder(this)
+                    .setTitle("Ajouter à un parcours")
+                    .setItems(names) { _, which ->
+                        val selected = itineraries[which]
+                        addPlaceToItinerary(selected.id, placeId, selected.placeIds)
+                    }
+                    .show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Erreur de chargement des parcours", Toast.LENGTH_SHORT).show()
+            }
     }
 
-    private fun addToSelection(placeName: String) {
-        val selection = sharedPref.getStringSet("to_see", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        if (selection.contains(placeName)) {
-            Toast.makeText(this, "$placeName déjà dans votre sélection", Toast.LENGTH_SHORT).show()
-        } else {
-            selection.add(placeName)
-            sharedPref.edit().putStringSet("to_see", selection).apply()
-            Toast.makeText(this, "$placeName ajouté à votre sélection", Toast.LENGTH_SHORT).show()
+    private fun addPlaceToItinerary(itineraryId: String, placeId: String, currentPlaceIds: List<String>) {
+        if (currentPlaceIds.contains(placeId)) {
+            Toast.makeText(this, "Ce lieu est déjà dans le parcours", Toast.LENGTH_SHORT).show()
+            return
         }
+        val newPlaceIds = currentPlaceIds.toMutableList().apply { add(placeId) }
+        FirebaseFirestore.getInstance().collection("itineraries").document(itineraryId)
+            .update("placeIds", newPlaceIds)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Lieu ajouté au parcours", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 }

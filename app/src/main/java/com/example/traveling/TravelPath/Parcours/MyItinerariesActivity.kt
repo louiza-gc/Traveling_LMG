@@ -15,7 +15,6 @@ import com.google.firebase.firestore.FirebaseFirestore
 class MyItinerariesActivity : AppCompatActivity() {
 
     private lateinit var recycler: RecyclerView
-    private lateinit var adapter: SimpleItineraryAdapter
     private val db = FirebaseFirestore.getInstance()
     private var userId: String? = null
     private var itinerariesList = mutableListOf<Itinerary>()
@@ -24,10 +23,7 @@ class MyItinerariesActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_my_itineraries)
 
-        userId = intent.getStringExtra("userId")
-        if (userId.isNullOrEmpty()) {
-            userId = FirebaseAuth.getInstance().currentUser?.uid
-        }
+        userId = intent.getStringExtra("userId") ?: FirebaseAuth.getInstance().currentUser?.uid
         if (userId.isNullOrEmpty()) {
             AlertDialog.Builder(this)
                 .setTitle("Connexion requise")
@@ -52,23 +48,27 @@ class MyItinerariesActivity : AppCompatActivity() {
             .get()
             .addOnSuccessListener { result ->
                 itinerariesList = result.documents.mapNotNull { doc ->
-                    doc.toObject(Itinerary::class.java)?.copy(id = doc.id)
+                    Itinerary(
+                        id = doc.id,
+                        name = doc.getString("name") ?: "",
+                        description = doc.getString("description") ?: "",
+                        placeIds = (doc.get("placeIds") as? List<String>) ?: emptyList()
+                    )
                 }.toMutableList()
                 if (itinerariesList.isEmpty()) {
                     Toast.makeText(this, "Aucun parcours", Toast.LENGTH_SHORT).show()
                 }
-                adapter = SimpleItineraryAdapter(
+                val adapter = ItineraryWithImageAdapter(
                     items = itinerariesList,
-                    onItemClick = { itinerary ->
+                    onItemClick = { itinerary: Itinerary ->
                         val intent = Intent(this, ItineraryDetailActivity::class.java)
                         intent.putExtra("itinerary", itinerary)
                         startActivity(intent)
                     },
-                    onDeleteClick = { itinerary, position ->
+                    onDeleteClick = { itinerary: Itinerary, position: Int ->
                         deleteItinerary(itinerary, position)
                     }
                 )
-                recycler.adapter = adapter
                 recycler.adapter = adapter
             }
             .addOnFailureListener { e ->

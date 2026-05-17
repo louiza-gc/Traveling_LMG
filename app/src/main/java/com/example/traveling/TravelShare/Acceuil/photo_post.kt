@@ -1,8 +1,10 @@
 package com.example.traveling.TravelShare.Acceuil
 
 import android.content.Intent
+import android.location.Geocoder
 import android.net.Uri
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import android.widget.Button
 import android.widget.EditText
@@ -22,6 +24,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.traveling.R
+import com.example.traveling.TravelPath.Parcours.AutoItineraryActivity
 import com.example.traveling.TravelShare.feed.CommentAdapter
 import com.example.traveling.TravelShare.feed.CommentItem
 import com.google.firebase.auth.FirebaseAuth
@@ -73,6 +76,7 @@ class photo_post : AppCompatActivity() {
     private var timestamp: Long = 0
     private lateinit var tvReportCount: TextView
     private var reportsCount: Int = 0
+    private var postTitle: String = ""
 
     // Tags récupérés depuis Firestore
     private var currentTags: List<String> = emptyList()
@@ -216,6 +220,7 @@ class photo_post : AppCompatActivity() {
                     sharesCount = (data?.get("sharesCount") as? Long)?.toInt() ?: 0
                     reportsCount = (data?.get("reportsCount") as? Long)?.toInt() ?: 0
                     timestamp = (data?.get("timestamp") as? Long) ?: System.currentTimeMillis()
+                    postTitle = data?.get("title") as? String ?: ""
 
                     // Récupérer les tags directement depuis Firestore
                     currentTags = (data?.get("tags") as? List<*>)?.map { it.toString() } ?: emptyList()
@@ -351,7 +356,7 @@ class photo_post : AppCompatActivity() {
         }
 
         btnGenerateRoute.setOnClickListener {
-            openMapsForLocation()
+            openTravelPathWithLocation()
         }
 
         btnOpenRoute.setOnClickListener {
@@ -649,5 +654,47 @@ class photo_post : AppCompatActivity() {
         rvPhotos.adapter = adapter
 
         dialog.show()
+    }
+
+    private fun openTravelPathWithLocation() {
+        if (location.isEmpty() || location == "Ajouter un lieu") {
+            Toast.makeText(this, "📍 Aucun lieu associé à cette publication", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        try {
+            val intent = Intent(this, Class.forName("com.example.traveling.TravelPath.Parcours.AutoItineraryActivity"))
+
+            val city = extractCityFromLocation(location)
+            val parcoursName = if (postTitle.isNotEmpty()) postTitle else "Voyage à $city"
+
+            intent.putExtra("itinerary_name", parcoursName)
+            intent.putExtra("city", city)
+
+            startActivity(intent)
+        } catch (e: Exception) {
+            Log.e("TRAVELPATH", "Erreur: ${e.message}")
+            Toast.makeText(this, "Module TravelPath non disponible", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun extractCityFromLocation(locationName: String): String {
+        // Essayer d'obtenir la ville via Geocoder
+        try {
+            val geocoder = Geocoder(this, Locale.getDefault())
+            val addresses = geocoder.getFromLocationName(locationName, 1)
+            if (!addresses.isNullOrEmpty()) {
+                val city = addresses[0].locality ?: addresses[0].subAdminArea ?: addresses[0].adminArea
+                if (!city.isNullOrEmpty()) {
+                    return city
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("TRAVELPATH", "Geocoder error: ${e.message}")
+        }
+
+        // Fallback : prendre le dernier élément après la virgule
+        val parts = locationName.split(",")
+        return parts.lastOrNull()?.trim() ?: locationName
     }
 }

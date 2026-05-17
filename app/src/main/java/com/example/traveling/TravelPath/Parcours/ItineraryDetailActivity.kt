@@ -1,15 +1,15 @@
 package com.example.traveling.TravelPath.Parcours
 
 import android.os.Bundle
-import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.traveling.R
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.example.traveling.TravelPath.Accueil.PlaceRepository
+import kotlinx.coroutines.launch
 
 class ItineraryDetailActivity : AppCompatActivity() {
 
@@ -26,39 +26,34 @@ class ItineraryDetailActivity : AppCompatActivity() {
 
         findViewById<TextView>(R.id.detail_title).text = itinerary.name
         findViewById<TextView>(R.id.detail_desc).text = itinerary.description
-        findViewById<TextView>(R.id.detail_cost).text = "Coût total : %.2f €".format(itinerary.totalCost)
-        findViewById<TextView>(R.id.detail_duration).text = "Durée totale : ${itinerary.totalDurationMinutes} min"
-        findViewById<TextView>(R.id.detail_effort).text = "Effort moyen : %.1f/5".format(itinerary.averageEffort)
 
-        val recyclerSteps = findViewById<RecyclerView>(R.id.recyclerSteps)
-        recyclerSteps.layoutManager = LinearLayoutManager(this)
-        recyclerSteps.adapter = StepsAdapter(itinerary.steps)
+        lifecycleScope.launch {
+            val allPlaces = PlaceRepository.loadAllPlaces()
+            val places = allPlaces.filter { it.id in itinerary.placeIds }
 
-        val btnSave = findViewById<Button>(R.id.btn_save_itinerary)
-        btnSave.setOnClickListener {
-            val uid = FirebaseAuth.getInstance().currentUser?.uid
-            if (uid == null) {
-                Toast.makeText(this, "Connectez-vous pour sauvegarder", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
+            val totalCost = places.sumOf { it.details.costEstimate.adult }
+            val totalDuration = places.sumOf { it.details.typicalDurationMinutes }
+            val avgEffort = if (places.isNotEmpty()) places.map { it.details.effortLevel }.average() else 0.0
+
+            findViewById<TextView>(R.id.detail_cost).text = "Coût total : %.2f €".format(totalCost)
+            findViewById<TextView>(R.id.detail_duration).text = "Durée totale : ${totalDuration} min"
+            findViewById<TextView>(R.id.detail_effort).text = "Effort moyen : %.1f/5".format(avgEffort)
+
+            val steps = places.mapIndexed { index, place ->
+                Step(
+                    order = index + 1,
+                    placeId = place.id,
+                    arrivalTime = "",
+                    departureTime = "",
+                    durationMinutes = place.details.typicalDurationMinutes,
+                    cost = place.details.costEstimate.adult,
+                    effort = place.details.effortLevel,
+                    distanceFromPreviousKm = 0.0
+                )
             }
-            val data = hashMapOf(
-                "name" to itinerary.name,
-                "description" to itinerary.description,
-                "placeIds" to itinerary.steps.map { it.placeId },
-                "totalCost" to itinerary.totalCost,
-                "totalDurationMinutes" to itinerary.totalDurationMinutes,
-                "averageEffort" to itinerary.averageEffort,
-                "createdBy" to uid,
-                "createdAt" to System.currentTimeMillis()
-            )
-            FirebaseFirestore.getInstance().collection("itineraries")
-                .add(data)
-                .addOnSuccessListener {
-                    Toast.makeText(this, "Parcours sauvegardé", Toast.LENGTH_SHORT).show()
-                }
-                .addOnFailureListener { e ->
-                    Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
-                }
+            val recyclerSteps = findViewById<RecyclerView>(R.id.recyclerSteps)
+            recyclerSteps.layoutManager = LinearLayoutManager(this@ItineraryDetailActivity)
+            recyclerSteps.adapter = StepsAdapter(steps)
         }
     }
 
@@ -78,8 +73,8 @@ class ItineraryDetailActivity : AppCompatActivity() {
 
         override fun onBindViewHolder(holder: StepViewHolder, position: Int) {
             val step = steps[position]
-            holder.title.text = "${step.order}. ${step.arrivalTime} → ${step.departureTime} (${step.durationMinutes} min)"
-            holder.subtitle.text = "Coût: ${step.cost} € | Effort: ${step.effort}/5 | Dist: %.1f km".format(step.distanceFromPreviousKm)
+            holder.title.text = "${step.order}. ${step.placeId}"
+            holder.subtitle.text = "Coût: ${step.cost} € | Effort: ${step.effort}/5 | Durée: ${step.durationMinutes} min"
         }
 
         override fun getItemCount() = steps.size

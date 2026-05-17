@@ -14,7 +14,10 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.traveling.R
+import com.example.traveling.TravelPath.Parcours.Itinerary
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 
 class CategoryDetailActivity : AppCompatActivity() {
@@ -34,6 +37,7 @@ class CategoryDetailActivity : AppCompatActivity() {
 
         currentCategoryName = intent.getStringExtra("CATEGORY_NAME") ?: ""
         currentCity = intent.getStringExtra("CITY") ?: "Paris"
+
         supportActionBar?.title = currentCategoryName
 
         recycler = findViewById(R.id.recyclerCategoryDetails)
@@ -42,6 +46,7 @@ class CategoryDetailActivity : AppCompatActivity() {
         fabGenerate = findViewById(R.id.fab_generate)
 
         recycler.layoutManager = LinearLayoutManager(this)
+
         loadPlacesByCategory()
 
         fabGenerate.setOnClickListener {
@@ -54,7 +59,9 @@ class CategoryDetailActivity : AppCompatActivity() {
         searchBar.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) { performLocalSearch(s.toString()) }
+            override fun afterTextChanged(s: android.text.Editable?) {
+                performLocalSearch(s.toString())
+            }
         })
     }
 
@@ -66,35 +73,79 @@ class CategoryDetailActivity : AppCompatActivity() {
                 val all = PlaceRepository.loadAllPlaces()
                 allPlaces = all.filter { it.category == currentCategoryName }
                 updateAdapter(allPlaces)
-                if (allPlaces.isEmpty()) Toast.makeText(this@CategoryDetailActivity, "Aucun lieu", Toast.LENGTH_SHORT).show()
-            } catch (e: Exception) { Toast.makeText(this@CategoryDetailActivity, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
-            } finally { progressBar.visibility = ProgressBar.GONE }
+                if (allPlaces.isEmpty()) {
+                    Toast.makeText(this@CategoryDetailActivity, "Aucun lieu trouvé pour cette catégorie", Toast.LENGTH_SHORT).show()
+                }
+            } catch (e: Exception) {
+                Toast.makeText(this@CategoryDetailActivity, "Erreur de chargement : ${e.message}", Toast.LENGTH_SHORT).show()
+            } finally {
+                progressBar.visibility = ProgressBar.GONE
+            }
         }
     }
 
     private fun updateAdapter(places: List<Place>) {
-        val items = places.map { Item(it.name, "", it.media.thumbnail, it.location.city, it.location.country) }
-        adapter = ItemAdapter(items,
-            onItemClick = { clicked -> places.find { it.name == clicked.name }?.let { showPlaceDialog(it) } },
-            onFavoriteClick = { item -> toggleFavorite(item.name) },
-            onAddClick = { item -> addToSelection(item.name) }
+        // Récupérer l'état des favoris pour cet utilisateur (SharedPreferences avec userId)
+        val userId = intent.getStringExtra("userId") ?: ""
+        val prefsName = if (userId.isNotEmpty()) "travelpath_${userId}" else "travelpath_guest"
+        val sharedPref = getSharedPreferences(prefsName, MODE_PRIVATE)
+        val favoritesSet = sharedPref.getStringSet("favorites", emptySet()) ?: emptySet()
+
+        val items = places.map { place ->
+            Item(
+                id = place.id,   // important
+                name = place.name,
+                imageUrl = place.media.thumbnail,
+                city = place.location.city,
+                country = place.location.country,
+                isFavorite = favoritesSet.contains(place.id)
+            )
+        }
+
+        adapter = ItemAdapter(
+            items = items,
+            onItemClick = { clickedItem ->
+                val place = places.find { it.id == clickedItem.id }
+                place?.let { showPlaceDialog(it) }
+            },
+            onFavoriteClick = { item -> toggleFavorite(item.id, sharedPref) },
+            onAddClick = { item -> showAddToItineraryDialog(item.id) }
         )
         recycler.adapter = adapter
     }
 
     private fun performLocalSearch(query: String) {
-        val lower = query.lowercase().trim()
-        val filtered = if (lower.isEmpty()) allPlaces else allPlaces.filter {
-            it.name.lowercase().contains(lower) ||
-                    it.location.city.lowercase().contains(lower) ||
-                    it.location.country.lowercase().contains(lower)
+        val lowerQuery = query.lowercase().trim()
+        val filtered = if (lowerQuery.isEmpty()) {
+            allPlaces
+        } else {
+            allPlaces.filter { place ->
+                place.name.lowercase().contains(lowerQuery) ||
+                        place.location.city.lowercase().contains(lowerQuery) ||
+                        place.location.country.lowercase().contains(lowerQuery)
+            }
         }
         updateAdapter(filtered)
-        supportActionBar?.title = if (lower.isNotEmpty()) "Résultats : $query" else currentCategoryName
+        supportActionBar?.title = if (lowerQuery.isNotEmpty()) "Résultats : $query" else currentCategoryName
+    }
+
+    private fun toggleFavorite(placeId: String, sharedPref: android.content.SharedPreferences) {
+        val favorites = sharedPref.getStringSet("favorites", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        if (favorites.contains(placeId)) {
+            favorites.remove(placeId)
+            Toast.makeText(this, "Retiré des favoris", Toast.LENGTH_SHORT).show()
+        } else {
+            favorites.add(placeId)
+            Toast.makeText(this, "Ajouté aux favoris", Toast.LENGTH_SHORT).show()
+        }
+        sharedPref.edit().putStringSet("favorites", favorites).apply()
+        // Recharger l'affichage pour mettre à jour l'icône
+        updateAdapter(allPlaces.filter { it.category == currentCategoryName })
     }
 
     private fun showPlaceDialog(place: Place) {
         val dialogView = layoutInflater.inflate(R.layout.activity_place_detail, null)
+
         dialogView.findViewById<TextView>(R.id.place_name).text = place.name
         dialogView.findViewById<TextView>(R.id.place_description).text = place.details.description
         dialogView.findViewById<TextView>(R.id.place_cost).text = "Coût : %.2f €".format(place.details.costEstimate.adult)
@@ -103,28 +154,72 @@ class CategoryDetailActivity : AppCompatActivity() {
         dialogView.findViewById<TextView>(R.id.place_address).text = "Adresse : ${place.location.address}"
         val tagsText = if (place.details.tags.isNotEmpty()) "Tags : ${place.details.tags.joinToString(", ")}" else ""
         dialogView.findViewById<TextView>(R.id.place_tags).text = tagsText
+
         val imageView = dialogView.findViewById<ImageView>(R.id.place_image)
-        if (place.media.thumbnail.isNotBlank()) Glide.with(this).load(place.media.thumbnail).into(imageView)
-        else imageView.setImageResource(android.R.drawable.ic_menu_gallery)
-        AlertDialog.Builder(this).setView(dialogView).setPositiveButton("Fermer", null).show()
-    }
-
-    private fun toggleFavorite(placeName: String) {
-        val prefs = getSharedPreferences("travelpath_prefs", MODE_PRIVATE)
-        val fav = prefs.getStringSet("favorites", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        if (fav.contains(placeName)) fav.remove(placeName) else fav.add(placeName)
-        prefs.edit().putStringSet("favorites", fav).apply()
-        Toast.makeText(this, if (fav.contains(placeName)) "Ajouté aux favoris" else "Retiré des favoris", Toast.LENGTH_SHORT).show()
-    }
-
-    private fun addToSelection(placeName: String) {
-        val prefs = getSharedPreferences("travelpath_prefs", MODE_PRIVATE)
-        val sel = prefs.getStringSet("to_see", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        if (sel.contains(placeName)) Toast.makeText(this, "Déjà sélectionné", Toast.LENGTH_SHORT).show()
-        else {
-            sel.add(placeName)
-            prefs.edit().putStringSet("to_see", sel).apply()
-            Toast.makeText(this, "Ajouté à votre sélection", Toast.LENGTH_SHORT).show()
+        if (place.media.thumbnail.isNotBlank()) {
+            Glide.with(this).load(place.media.thumbnail).into(imageView)
+        } else {
+            imageView.setImageResource(android.R.drawable.ic_menu_gallery)
         }
+
+        AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setPositiveButton("Fermer", null)
+            .show()
+    }
+
+    // ==================== AJOUT À UN PARCOURS EXISTANT ====================
+
+    private fun showAddToItineraryDialog(placeId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid == null) {
+            Toast.makeText(this, "Connectez-vous pour ajouter à un parcours", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val db = FirebaseFirestore.getInstance()
+        db.collection("itineraries")
+            .whereEqualTo("createdBy", uid)
+            .get()
+            .addOnSuccessListener { result ->
+                val itineraries = result.documents.mapNotNull { doc ->
+                    Itinerary(
+                        id = doc.id,
+                        name = doc.getString("name") ?: "",
+                        description = doc.getString("description") ?: "",
+                        placeIds = (doc.get("placeIds") as? List<String>) ?: emptyList()
+                    )
+                }
+                if (itineraries.isEmpty()) {
+                    Toast.makeText(this, "Aucun parcours. Créez-en un d'abord.", Toast.LENGTH_SHORT).show()
+                    return@addOnSuccessListener
+                }
+                val names = itineraries.map { it.name }.toTypedArray()
+                AlertDialog.Builder(this)
+                    .setTitle("Ajouter à un parcours")
+                    .setItems(names) { _, which ->
+                        val selected = itineraries[which]
+                        addPlaceToItinerary(selected.id, placeId, selected.placeIds)
+                    }
+                    .show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Erreur de chargement des parcours", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun addPlaceToItinerary(itineraryId: String, placeId: String, currentPlaceIds: List<String>) {
+        if (currentPlaceIds.contains(placeId)) {
+            Toast.makeText(this, "Ce lieu est déjà dans le parcours", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val newPlaceIds = currentPlaceIds.toMutableList().apply { add(placeId) }
+        FirebaseFirestore.getInstance().collection("itineraries").document(itineraryId)
+            .update("placeIds", newPlaceIds)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Lieu ajouté au parcours", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 }

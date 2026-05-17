@@ -3,6 +3,7 @@ package com.example.traveling.TravelPath.Accueil
 import android.content.Intent
 import android.content.SharedPreferences
 import android.os.Bundle
+import android.util.Log
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -15,11 +16,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.traveling.R
-import com.example.traveling.TravelPath.Parcours.AutoItineraryActivity
 import com.example.traveling.TravelPath.Parcours.CreateItineraryActivity
+import com.example.traveling.TravelPath.Parcours.Itinerary
 import com.example.traveling.TravelPath.Parcours.MyItinerariesActivity
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
 
 class AccueilPath : AppCompatActivity() {
@@ -41,6 +44,7 @@ class AccueilPath : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_accueil_path)
 
+        // Récupération de l'identifiant utilisateur (transmis par Login)
         userId = intent.getStringExtra("userId") ?: ""
         val prefsName = if (userId.isNotEmpty()) "travelpath_${userId}" else "travelpath_guest"
         sharedPref = getSharedPreferences(prefsName, MODE_PRIVATE)
@@ -50,21 +54,30 @@ class AccueilPath : AppCompatActivity() {
         fabGenerate = findViewById(R.id.fab_generate_home)
         bottomNav = findViewById(R.id.bottomNav)
 
+        // Affichage initial des catégories
         showCategories()
 
+        // Bouton flottant pour créer un parcours (manuel ou automatique)
         fabGenerate.setOnClickListener {
-            val options = arrayOf("Créer un parcours personnalisé", "Générer un parcours automatique")
+            val options = arrayOf("Parcours personnalisé", "Parcours automatique")
             AlertDialog.Builder(this)
-                .setTitle("Nouveau parcours")
+                .setTitle("Créer un parcours")
                 .setItems(options) { _, which ->
                     when (which) {
-                        0 -> startActivity(Intent(this, CreateItineraryActivity::class.java))
-                        1 -> startActivity(Intent(this, AutoItineraryActivity::class.java))
+                        0 -> {
+                            // Parcours personnalisé : l'utilisateur sélectionne lui-même les lieux
+                            startActivity(Intent(this, CreateItineraryActivity::class.java))
+                        }
+                        1 -> {
+                            // Parcours automatique : on demande d'abord le nom et la ville
+                            startActivity(Intent(this, AutoItineraryActivity::class.java))
+                        }
                     }
                 }
                 .show()
         }
 
+        // Bottom navigation
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.menu_path_home -> true
@@ -81,15 +94,14 @@ class AccueilPath : AppCompatActivity() {
                     true
                 }
                 R.id.menu_path_profile -> {
-                    val intent = Intent(this, TravelPathProfileActivity::class.java)
-                    intent.putExtra("userId", userId) // si vous voulez passer l'UID
-                    startActivity(intent)
+                    startActivity(Intent(this, com.example.traveling.TravelPath.Accueil.TravelPathProfileActivity::class.java))
                     true
                 }
                 else -> false
             }
         }
 
+        // Recherche en temps réel
         searchBar.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -98,6 +110,7 @@ class AccueilPath : AppCompatActivity() {
             override fun afterTextChanged(s: android.text.Editable?) {}
         })
 
+        // Chargement des lieux depuis le JSON
         lifecycleScope.launch {
             PlaceRepository.init(applicationContext)
             allPlaces = PlaceRepository.loadAllPlaces()
@@ -138,29 +151,101 @@ class AccueilPath : AppCompatActivity() {
         val favoritesSet = sharedPref.getStringSet("favorites", emptySet()) ?: emptySet()
         val items = results.map { place ->
             Item(
+                id = place.id,
                 name = place.name,
-                assetPath = "",
                 imageUrl = place.media.thumbnail,
                 city = place.location.city,
                 country = place.location.country,
-                isFavorite = favoritesSet.contains(place.name)
+                isFavorite = favoritesSet.contains(place.id)
             )
         }
 
         recycler.adapter = ItemAdapter(
             items = items,
             onItemClick = { clickedItem ->
-                val place = results.find { it.name == clickedItem.name }
+                val place = results.find { it.id == clickedItem.id }
                 place?.let { showPlaceDialog(it) }
             },
-            onFavoriteClick = { item -> toggleFavorite(item.name) },
-            onAddClick = { item -> addToSelection(item.name) }
+            onFavoriteClick = { item -> toggleFavorite(item.id);
+                Log.d("FAVORI", "userId = $userId, prefsName = travelpath_${userId}") },
+            onAddClick = { item -> showAddToItineraryDialog(item.id) }
         )
-        if (items.isEmpty()) Toast.makeText(this, "Aucun résultat pour \"$query\"", Toast.LENGTH_SHORT).show()
+        if (items.isEmpty()) {
+            Toast.makeText(this, "Aucun résultat pour \"$query\"", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun toggleFavorite(placeId: String) {
+        val favorites = sharedPref.getStringSet("favorites", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
+        if (favorites.contains(placeId)) {
+            favorites.remove(placeId)
+            Toast.makeText(this, "Retiré des favoris", Toast.LENGTH_SHORT).show()
+        } else {
+            favorites.add(placeId)
+            Toast.makeText(this, "Ajouté aux favoris", Toast.LENGTH_SHORT).show()
+        }
+        sharedPref.edit().putStringSet("favorites", favorites).apply()
+
+        // Rafraîchir la recherche actuelle pour mettre à jour l'icône
+        performSearch(searchBar.text.toString())
+    }
+
+    private fun showAddToItineraryDialog(placeId: String) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+        if (uid == null) {
+            Toast.makeText(this, "Connectez-vous pour ajouter à un parcours", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val db = FirebaseFirestore.getInstance()
+        db.collection("itineraries")
+            .whereEqualTo("createdBy", uid)
+            .get()
+            .addOnSuccessListener { result ->
+                val itineraries = result.documents.mapNotNull { doc ->
+                    Itinerary(
+                        id = doc.id,
+                        name = doc.getString("name") ?: "",
+                        description = doc.getString("description") ?: "",
+                        placeIds = (doc.get("placeIds") as? List<String>) ?: emptyList()
+                    )
+                }
+                if (itineraries.isEmpty()) {
+                    Toast.makeText(this, "Aucun parcours. Créez-en un d'abord.", Toast.LENGTH_SHORT).show()
+                    return@addOnSuccessListener
+                }
+                val names = itineraries.map { it.name }.toTypedArray()
+                AlertDialog.Builder(this)
+                    .setTitle("Ajouter à un parcours")
+                    .setItems(names) { _, which ->
+                        val selected = itineraries[which]
+                        addPlaceToItinerary(selected.id, placeId, selected.placeIds)
+                    }
+                    .show()
+            }
+            .addOnFailureListener {
+                Toast.makeText(this, "Erreur de chargement des parcours", Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun addPlaceToItinerary(itineraryId: String, placeId: String, currentPlaceIds: List<String>) {
+        if (currentPlaceIds.contains(placeId)) {
+            Toast.makeText(this, "Ce lieu est déjà dans le parcours", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val newPlaceIds = currentPlaceIds.toMutableList().apply { add(placeId) }
+        FirebaseFirestore.getInstance().collection("itineraries").document(itineraryId)
+            .update("placeIds", newPlaceIds)
+            .addOnSuccessListener {
+                Toast.makeText(this, "Lieu ajouté au parcours", Toast.LENGTH_SHORT).show()
+            }
+            .addOnFailureListener { e ->
+                Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun showPlaceDialog(place: Place) {
         val dialogView = layoutInflater.inflate(R.layout.activity_place_detail, null)
+
         dialogView.findViewById<TextView>(R.id.place_name).text = place.name
         dialogView.findViewById<TextView>(R.id.place_description).text = place.details.description
         dialogView.findViewById<TextView>(R.id.place_cost).text = "Coût : %.2f €".format(place.details.costEstimate.adult)
@@ -169,32 +254,17 @@ class AccueilPath : AppCompatActivity() {
         dialogView.findViewById<TextView>(R.id.place_address).text = "Adresse : ${place.location.address}"
         val tagsText = if (place.details.tags.isNotEmpty()) "Tags : ${place.details.tags.joinToString(", ")}" else ""
         dialogView.findViewById<TextView>(R.id.place_tags).text = tagsText
+
         val imageView = dialogView.findViewById<ImageView>(R.id.place_image)
-        if (place.media.thumbnail.isNotBlank()) Glide.with(this).load(place.media.thumbnail).into(imageView)
-        else imageView.setImageResource(android.R.drawable.ic_menu_gallery)
-        AlertDialog.Builder(this).setView(dialogView).setPositiveButton("Fermer", null).show()
-    }
-
-    private fun toggleFavorite(placeName: String) {
-        val favorites = sharedPref.getStringSet("favorites", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        if (favorites.contains(placeName)) {
-            favorites.remove(placeName)
-            Toast.makeText(this, "$placeName retiré des favoris", Toast.LENGTH_SHORT).show()
+        if (place.media.thumbnail.isNotBlank()) {
+            Glide.with(this).load(place.media.thumbnail).into(imageView)
         } else {
-            favorites.add(placeName)
-            Toast.makeText(this, "$placeName ajouté aux favoris", Toast.LENGTH_SHORT).show()
+            imageView.setImageResource(android.R.drawable.ic_menu_gallery)
         }
-        sharedPref.edit().putStringSet("favorites", favorites).apply()
-    }
 
-    private fun addToSelection(placeName: String) {
-        val selection = sharedPref.getStringSet("to_see", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        if (selection.contains(placeName)) {
-            Toast.makeText(this, "$placeName déjà dans votre sélection", Toast.LENGTH_SHORT).show()
-        } else {
-            selection.add(placeName)
-            sharedPref.edit().putStringSet("to_see", selection).apply()
-            Toast.makeText(this, "$placeName ajouté à votre sélection", Toast.LENGTH_SHORT).show()
-        }
+        AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setPositiveButton("Fermer", null)
+            .show()
     }
 }
