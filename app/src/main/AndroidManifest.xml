@@ -17,18 +17,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Traveling">
-        <activity
-            android:name=".TravelShare.Groups.InviteMembersActivity"
-            android:exported="false" />
-        <activity
-            android:name=".TravelShare.Groups.GroupMembersActivity"
-            android:exported="false" />
-        <activity
-            android:name=".TravelShare.Groups.GroupDetailsActivity"
-            android:exported="false" />
-        <activity
-            android:name=".TravelShare.Groups.CreateGroupActivity"
-            android:exported="false" />
         <!--
              TODO: Before you run your application, you need a Google Maps API key.
 
@@ -43,6 +31,31 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyAdrPK5Wv_gAEVEB4Nz-f3ga2uXVpvyvE8" />
+
+        <activity android:name=".TravelPath.Accueil.CategoryDetailActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Parcours.ItineraryActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Parcours.ItineraryDetailActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Accueil.PlaceDetailActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Parcours.PreferencesActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Parcours.CreateItineraryActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Parcours.MyItinerariesActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Accueil.AutoItineraryActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Accueil.FavoritesActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Accueil.TravelPathProfileActivity" android:exported="false" />
+        <activity android:name=".TravelPath.Accueil.AccueilPath" android:exported="false" />
+
+        <activity
+            android:name=".TravelShare.Groups.InviteMembersActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TravelShare.Groups.GroupMembersActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TravelShare.Groups.GroupDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".TravelShare.Groups.CreateGroupActivity"
+            android:exported="false" />
 
         <activity
             android:name=".TravelShare.Publication.ActivityLocationPicker"
@@ -72,15 +85,7 @@
         <activity
             android:name=".TravelShare.Inscription.register_email"
             android:exported="false" />
-        <activity
-            android:name=".TravelPath.Accueil.AccueilPath"
-            android:exported="false" />
-        <activity
-            android:name=".TravelPath.Accueil.CategoryDetailActivity"
-            android:exported="false" />
-        <activity
-            android:name=".TravelPath.Accueil.PlaceDetailActivity"
-            android:exported="false" />
+
         <activity
             android:name=".TravelShare.MainActivity"
             android:exported="false" />

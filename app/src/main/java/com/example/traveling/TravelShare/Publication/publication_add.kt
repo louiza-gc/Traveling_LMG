@@ -565,11 +565,11 @@ class publication_add : Fragment(R.layout.fragment_publication_add) {
 
                     // Générer une phrase complète
                     val description = when (tags.size) {
-                        0 -> "📸 Une belle photo de voyage"
-                        1 -> "📸 Superbe photo de ${tags[0]}"
-                        2 -> "📸 Magnifique photo de ${tags[0]} et ${tags[1]}"
-                        3 -> "📸 Magnifique photo de ${tags[0]}, ${tags[1]} et ${tags[2]}"
-                        else -> "📸 Magnifique photo de ${tags[0]}, ${tags[1]}, ${tags[2]} et ${tags[3]}"
+                        0 -> "Beautiful photo"
+                        1 -> "Beautiful photo of ${tags[0]}"
+                        2 -> "Beautiful photo of ${tags[0]} and ${tags[1]}"
+                        3 -> "Beautiful photo of ${tags[0]}, ${tags[1]} and ${tags[2]}"
+                        else -> "Beautiful photo of ${tags[0]}, ${tags[1]}, ${tags[2]} and ${tags[3]}"
                     }
 
                     etDescription.setText(description)

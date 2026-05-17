@@ -33,7 +33,6 @@ class NotificationsFragment : Fragment() {
     private val auth          = FirebaseAuth.getInstance()
     private val currentUserId get() = auth.currentUser?.uid ?: ""
 
-    // Tags que l'user suit actuellement (chargés depuis Firestore)
     private var followedTags = mutableListOf<String>()
 
     private val allTags = listOf(
@@ -56,8 +55,9 @@ class NotificationsFragment : Fragment() {
         btnFollowedTags = view.findViewById(R.id.btnFollowedTags)
 
         setupRecyclerView()
-        loadFollowedTags()         // Charger les tags suivis d'abord
-        loadNotifications()
+
+        // Charger les tags, puis les notifs ensuite
+        loadFollowedTagsThenNotifications()
 
         btnFollowedTags.setOnClickListener {
             showFollowedTagsBottomSheet()
@@ -80,10 +80,15 @@ class NotificationsFragment : Fragment() {
     // ==================== TAGS SUIVIS ====================
 
     /**
-     * Charge les tags suivis depuis Firestore
+     * Charge les tags suivis PUIS lance le listener de notifs
+     * Garantit que followedTags est prêt avant tout filtrage
      */
-    private fun loadFollowedTags() {
-        if (currentUserId.isEmpty()) return
+    private fun loadFollowedTagsThenNotifications() {
+        if (currentUserId.isEmpty()) {
+            tvEmpty.visibility = View.VISIBLE
+            tvEmpty.text       = "Connectez-vous pour voir vos notifications"
+            return
+        }
 
         firestore.collection("users").document(currentUserId).get()
             .addOnSuccessListener { doc ->
@@ -91,13 +96,17 @@ class NotificationsFragment : Fragment() {
                 val tags = doc.get("followedTags") as? List<String> ?: emptyList()
                 followedTags = tags.toMutableList()
                 updateFollowedTagsButton()
+                // Tags prêts → on peut maintenant charger les notifs avec le bon filtre
+                loadNotifications()
+            }
+            .addOnFailureListener {
+                // Erreur Firestore → on charge quand même sans filtre
+                loadNotifications()
             }
     }
 
-    /**
-     * Met à jour le libellé du bouton selon le nb de tags suivis
-     */
     private fun updateFollowedTagsButton() {
+        if (!isAdded) return
         btnFollowedTags.text = if (followedTags.isEmpty()) {
             "🏷️ Tags suivis"
         } else {
@@ -105,9 +114,6 @@ class NotificationsFragment : Fragment() {
         }
     }
 
-    /**
-     * Bottom sheet pour choisir les tags suivis
-     */
     private fun showFollowedTagsBottomSheet() {
         val dialog     = BottomSheetDialog(requireContext())
         val dialogView = layoutInflater.inflate(R.layout.bottom_sheet_followed_tags, null)
@@ -115,26 +121,21 @@ class NotificationsFragment : Fragment() {
         val chipGroup  = dialogView.findViewById<ChipGroup>(R.id.chipGroupFollowedTags)
         val btnConfirm = dialogView.findViewById<MaterialButton>(R.id.btnConfirmTags)
 
-        // Créer une chip par tag, cocher ceux déjà suivis
         allTags.forEach { tag ->
-            val chip = Chip(requireContext()).apply {
+            chipGroup.addView(Chip(requireContext()).apply {
                 text        = tag
                 isCheckable = true
                 isChecked   = followedTags.contains(tag)
                 isClickable = true
-            }
-            chipGroup.addView(chip)
+            })
         }
 
         btnConfirm.setOnClickListener {
-            // Récupérer les tags cochés
             val selectedTags = mutableListOf<String>()
             for (i in 0 until chipGroup.childCount) {
                 val chip = chipGroup.getChildAt(i) as? Chip
                 if (chip?.isChecked == true) selectedTags.add(chip.text.toString())
             }
-
-            // Sauvegarder dans Firestore
             saveFollowedTags(selectedTags)
             dialog.dismiss()
         }
@@ -143,39 +144,28 @@ class NotificationsFragment : Fragment() {
         dialog.show()
     }
 
-    /**
-     * Sauvegarde les tags suivis dans Firestore et met à jour localement
-     */
     private fun saveFollowedTags(tags: List<String>) {
         if (currentUserId.isEmpty()) return
 
+        // Utiliser set+merge pour créer le champ s'il n'existe pas encore
         firestore.collection("users").document(currentUserId)
-            .update("followedTags", tags)
+            .set(mapOf("followedTags" to tags), com.google.firebase.firestore.SetOptions.merge())
             .addOnSuccessListener {
                 followedTags = tags.toMutableList()
                 updateFollowedTagsButton()
-                Toast.makeText(requireContext(), "Tags suivis mis à jour ", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "Tags suivis mis à jour ✅", Toast.LENGTH_SHORT).show()
+                // Rafraîchir les notifs avec le nouveau filtre
+                loadNotifications()
             }
-            .addOnFailureListener {
-                // Si le champ n'existe pas encore → set au lieu de update
-                firestore.collection("users").document(currentUserId)
-                    .set(mapOf("followedTags" to tags), com.google.firebase.firestore.SetOptions.merge())
-                    .addOnSuccessListener {
-                        followedTags = tags.toMutableList()
-                        updateFollowedTagsButton()
-                        Toast.makeText(requireContext(), "Tags suivis mis à jour", Toast.LENGTH_SHORT).show()
-                    }
+            .addOnFailureListener { e ->
+                Toast.makeText(requireContext(), "Erreur: ${e.message}", Toast.LENGTH_LONG).show()
             }
     }
 
     // ==================== LOAD NOTIFICATIONS ====================
 
     private fun loadNotifications() {
-        if (currentUserId.isEmpty()) {
-            tvEmpty.visibility = View.VISIBLE
-            tvEmpty.text       = "Connectez-vous pour voir vos notifications"
-            return
-        }
+        if (currentUserId.isEmpty()) return
 
         firestore.collection("users")
             .document(currentUserId)
@@ -209,7 +199,7 @@ class NotificationsFragment : Fragment() {
                         timestamp    = data["timestamp"]    as? Long ?: System.currentTimeMillis()
                     )
 
-                    // Filtrer les notifs de type tag/lieu selon les tags suivis
+                    // Filtre appliqué avec followedTags déjà chargé
                     if (shouldShowNotification(notif)) {
                         notificationsList.add(notif)
                     }
@@ -228,21 +218,17 @@ class NotificationsFragment : Fragment() {
     }
 
     /**
-     * Décide si une notif doit être affichée selon son type et les tags suivis
-     *
-     * Règles :
-     * - new_post_in_group      → toujours afficher (c'est une notif de groupe)
-     * - new_post_in_tag        → afficher seulement si le tag est suivi
-     *                            OU si l'user ne suit aucun tag (= pas de filtre)
-     * - new_post_in_location   → toujours afficher (pas de filtre par lieu pour l'instant)
-     * - new_post_public        → toujours afficher
-     * - autres (invitation...) → toujours afficher
+     * Règles de filtrage :
+     * - new_post_in_tag      → afficher seulement si le tag est dans followedTags
+     *                          Si followedTags est vide → tout afficher (pas de filtre)
+     * - new_post_in_group    → toujours afficher
+     * - new_post_in_location → toujours afficher
+     * - new_post_public      → toujours afficher
+     * - invitations, etc.    → toujours afficher
      */
     private fun shouldShowNotification(notif: NotificationItem): Boolean {
         return when (notif.type) {
             "new_post_in_tag" -> {
-                // Si l'user suit au moins un tag → filtrer
-                // Sinon → tout afficher
                 if (followedTags.isEmpty()) true
                 else followedTags.any { it.equals(notif.tag, ignoreCase = true) }
             }
@@ -274,11 +260,14 @@ class NotificationsFragment : Fragment() {
                     Toast.makeText(requireContext(), "Publication introuvable", Toast.LENGTH_SHORT).show()
                 }
             }
-            "user_joined_group", "invitation_accepted" -> {
-                if (notification.groupId.isNotEmpty()) openGroup(notification.groupId, notification.groupName)
+            "user_joined_group",
+            "invitation_accepted" -> {
+                if (notification.groupId.isNotEmpty())
+                    openGroup(notification.groupId, notification.groupName)
             }
             "group_invitation" -> {
-                if (notification.groupId.isNotEmpty()) openGroup(notification.groupId, notification.groupName)
+                if (notification.groupId.isNotEmpty())
+                    openGroup(notification.groupId, notification.groupName)
             }
             else -> Toast.makeText(requireContext(), notification.title, Toast.LENGTH_SHORT).show()
         }
@@ -287,10 +276,9 @@ class NotificationsFragment : Fragment() {
     // ==================== NAVIGATION ====================
 
     private fun openPost(postId: String) {
-        val intent = Intent(requireContext(), photo_post::class.java).apply {
+        startActivity(Intent(requireContext(), photo_post::class.java).apply {
             putExtra("post_id", postId)
-        }
-        startActivity(intent)
+        })
     }
 
     private fun openGroup(groupId: String, groupName: String) {
@@ -298,11 +286,10 @@ class NotificationsFragment : Fragment() {
         firestore.collection("groups").document(groupId).get()
             .addOnSuccessListener { doc ->
                 if (doc.exists()) {
-                    val intent = Intent(requireContext(), GroupDetailsActivity::class.java).apply {
+                    startActivity(Intent(requireContext(), GroupDetailsActivity::class.java).apply {
                         putExtra("group_id", groupId)
                         putExtra("group_name", groupName)
-                    }
-                    startActivity(intent)
+                    })
                 } else {
                     Toast.makeText(requireContext(), "Ce groupe n'existe plus", Toast.LENGTH_SHORT).show()
                     deleteNotificationsLinkedToGroup(groupId)
@@ -335,17 +322,15 @@ class NotificationsFragment : Fragment() {
                     ?: userDoc.getString("fullName")
                     ?: "Quelqu'un"
 
-                val memberData = hashMapOf(
-                    "userId"   to uid,
-                    "role"     to "member",
-                    "joinedAt" to System.currentTimeMillis()
-                )
-
                 firestore.collection("groups")
                     .document(notification.groupId)
                     .collection("members")
                     .document(uid)
-                    .set(memberData)
+                    .set(hashMapOf(
+                        "userId"   to uid,
+                        "role"     to "member",
+                        "joinedAt" to System.currentTimeMillis()
+                    ))
                     .addOnSuccessListener {
                         firestore.collection("groups")
                             .document(notification.groupId)
@@ -415,26 +400,24 @@ class NotificationsFragment : Fragment() {
                     val memberId = memberDoc.id
                     if (memberId == newMemberId) continue
 
-                    val notif = hashMapOf(
-                        "type"         to "user_joined_group",
-                        "title"        to "👋 Nouveau membre",
-                        "message"      to "$newMemberName a rejoint le groupe \"$groupName\"",
-                        "groupId"      to groupId,
-                        "groupName"    to groupName,
-                        "postId"       to "",
-                        "locationName" to "",
-                        "tag"          to "",
-                        "senderId"     to newMemberId,
-                        "senderName"   to newMemberName,
-                        "isRead"       to false,
-                        "status"       to "accepted",
-                        "timestamp"    to System.currentTimeMillis()
-                    )
-
                     firestore.collection("users")
                         .document(memberId)
                         .collection("notifications")
-                        .add(notif)
+                        .add(hashMapOf(
+                            "type"         to "user_joined_group",
+                            "title"        to "👋 Nouveau membre",
+                            "message"      to "$newMemberName a rejoint le groupe \"$groupName\"",
+                            "groupId"      to groupId,
+                            "groupName"    to groupName,
+                            "postId"       to "",
+                            "locationName" to "",
+                            "tag"          to "",
+                            "senderId"     to newMemberId,
+                            "senderName"   to newMemberName,
+                            "isRead"       to false,
+                            "status"       to "accepted",
+                            "timestamp"    to System.currentTimeMillis()
+                        ))
                 }
             }
     }
@@ -443,25 +426,23 @@ class NotificationsFragment : Fragment() {
         originalNotification: NotificationItem,
         currentUserName: String
     ) {
-        val notif = hashMapOf(
-            "type"         to "invitation_accepted",
-            "title"        to "✅ Invitation acceptée",
-            "message"      to "$currentUserName a accepté votre invitation à rejoindre \"${originalNotification.groupName}\"",
-            "groupId"      to originalNotification.groupId,
-            "groupName"    to originalNotification.groupName,
-            "postId"       to "",
-            "locationName" to "",
-            "tag"          to "",
-            "senderId"     to (auth.currentUser?.uid ?: ""),
-            "senderName"   to currentUserName,
-            "isRead"       to false,
-            "status"       to "accepted",
-            "timestamp"    to System.currentTimeMillis()
-        )
-
         firestore.collection("users")
             .document(originalNotification.senderId)
             .collection("notifications")
-            .add(notif)
+            .add(hashMapOf(
+                "type"         to "invitation_accepted",
+                "title"        to "✅ Invitation acceptée",
+                "message"      to "$currentUserName a accepté votre invitation à rejoindre \"${originalNotification.groupName}\"",
+                "groupId"      to originalNotification.groupId,
+                "groupName"    to originalNotification.groupName,
+                "postId"       to "",
+                "locationName" to "",
+                "tag"          to "",
+                "senderId"     to (auth.currentUser?.uid ?: ""),
+                "senderName"   to currentUserName,
+                "isRead"       to false,
+                "status"       to "accepted",
+                "timestamp"    to System.currentTimeMillis()
+            ))
     }
 }
