@@ -63,8 +63,11 @@ object ItineraryPlanner {
             totalCost = totalCost,
             totalDurationMinutes = totalDuration,
             averageEffort = avgEffort,
-            steps = steps
+            steps = steps,
+            placeIds = steps.map { it.placeId }
+
         )
+
     }
 
     private fun distanceInKm(lat1: Double, lon1: Double, lat2: Double, lon2: Double): Double {

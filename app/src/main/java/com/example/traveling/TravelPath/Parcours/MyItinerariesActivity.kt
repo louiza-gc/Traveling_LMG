@@ -8,7 +8,12 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.example.traveling.R
+import com.example.traveling.TravelPath.Accueil.AccueilPath
+import com.example.traveling.TravelPath.Accueil.FavoritesActivity
+import com.example.traveling.TravelPath.Accueil.TravelPathProfileActivity
 import com.example.traveling.TravelShare.Connection.login
+import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
@@ -22,7 +27,57 @@ class MyItinerariesActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_my_itineraries)
-
+        val fabGenerate = findViewById<FloatingActionButton>(R.id.fab_generate)
+        fabGenerate.setOnClickListener {
+            val options = arrayOf("Parcours personnalisé", "Parcours automatique")
+            AlertDialog.Builder(this)
+                .setTitle("Créer un parcours")
+                .setItems(options) { _, which ->
+                    when (which) {
+                        0 -> startActivity(Intent(this, CreateItineraryActivity::class.java))
+                        1 -> startActivity(Intent(this, AutoItineraryActivity::class.java))
+                    }
+                }
+                .show()
+        }
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_path_home -> {
+                    if (this !is AccueilPath) {
+                        Intent(this, AccueilPath::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                R.id.menu_path_favorites -> {
+                    if (this !is FavoritesActivity) {
+                        Intent(this, FavoritesActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                R.id.menu_path_itineraries -> true
+                R.id.menu_path_profile -> {
+                    if (this !is TravelPathProfileActivity) {
+                        Intent(this, TravelPathProfileActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        bottomNav.selectedItemId = when (this) {
+            is AccueilPath -> R.id.menu_path_home
+            is MyItinerariesActivity -> R.id.menu_path_itineraries
+            is FavoritesActivity -> R.id.menu_path_favorites
+            is TravelPathProfileActivity -> R.id.menu_path_profile
+            else -> R.id.menu_path_home
+        }
         userId = intent.getStringExtra("userId") ?: FirebaseAuth.getInstance().currentUser?.uid
         if (userId.isNullOrEmpty()) {
             AlertDialog.Builder(this)

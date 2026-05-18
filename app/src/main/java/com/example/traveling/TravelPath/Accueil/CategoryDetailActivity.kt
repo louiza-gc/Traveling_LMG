@@ -15,6 +15,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.traveling.R
 import com.example.traveling.TravelPath.Parcours.Itinerary
+import com.example.traveling.TravelPath.Parcours.MyItinerariesActivity
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -30,6 +32,8 @@ class CategoryDetailActivity : AppCompatActivity() {
     private var currentCategoryName: String = ""
     private var currentCity: String = "Paris"
     private var allPlaces: List<Place> = emptyList()
+    private var userId: String = ""
+    private val db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,6 +41,7 @@ class CategoryDetailActivity : AppCompatActivity() {
 
         currentCategoryName = intent.getStringExtra("CATEGORY_NAME") ?: ""
         currentCity = intent.getStringExtra("CITY") ?: "Paris"
+        userId = intent.getStringExtra("userId") ?: FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
         supportActionBar?.title = currentCategoryName
 
@@ -44,6 +49,37 @@ class CategoryDetailActivity : AppCompatActivity() {
         searchBar = findViewById(R.id.search)
         progressBar = findViewById(R.id.progressBar)
         fabGenerate = findViewById(R.id.fab_generate)
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_path_favorites -> {
+                    if (this !is FavoritesActivity) {
+                        Intent(this, FavoritesActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                R.id.menu_path_itineraries -> {
+                    if (this !is MyItinerariesActivity) {
+                        Intent(this, MyItinerariesActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                R.id.menu_path_home -> true
+                R.id.menu_path_profile -> {
+                    if (this !is TravelPathProfileActivity) {
+                        Intent(this, TravelPathProfileActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
 
         recycler.layoutManager = LinearLayoutManager(this)
 
@@ -58,10 +94,10 @@ class CategoryDetailActivity : AppCompatActivity() {
 
         searchBar.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: android.text.Editable?) {
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
                 performLocalSearch(s.toString())
             }
+            override fun afterTextChanged(s: android.text.Editable?) {}
         })
     }
 
@@ -85,15 +121,24 @@ class CategoryDetailActivity : AppCompatActivity() {
     }
 
     private fun updateAdapter(places: List<Place>) {
-        // Récupérer l'état des favoris pour cet utilisateur (SharedPreferences avec userId)
-        val userId = intent.getStringExtra("userId") ?: ""
-        val prefsName = if (userId.isNotEmpty()) "travelpath_${userId}" else "travelpath_guest"
-        val sharedPref = getSharedPreferences(prefsName, MODE_PRIVATE)
-        val favoritesSet = sharedPref.getStringSet("favorites", emptySet()) ?: emptySet()
+        if (userId.isEmpty()) {
+            buildAdapter(places, emptySet())
+        } else {
+            db.collection("favorites").document(userId).get()
+                .addOnSuccessListener { doc ->
+                    val favorites = (doc.get("placeIds") as? List<String>) ?: emptyList()
+                    buildAdapter(places, favorites.toSet())
+                }
+                .addOnFailureListener {
+                    buildAdapter(places, emptySet())
+                }
+        }
+    }
 
+    private fun buildAdapter(places: List<Place>, favoritesSet: Set<String>) {
         val items = places.map { place ->
             Item(
-                id = place.id,   // important
+                id = place.id,
                 name = place.name,
                 imageUrl = place.media.thumbnail,
                 city = place.location.city,
@@ -101,14 +146,13 @@ class CategoryDetailActivity : AppCompatActivity() {
                 isFavorite = favoritesSet.contains(place.id)
             )
         }
-
         adapter = ItemAdapter(
             items = items,
             onItemClick = { clickedItem ->
                 val place = places.find { it.id == clickedItem.id }
                 place?.let { showPlaceDialog(it) }
             },
-            onFavoriteClick = { item -> toggleFavorite(item.id, sharedPref) },
+            onFavoriteClick = { item -> toggleFavorite(item.id) },
             onAddClick = { item -> showAddToItineraryDialog(item.id) }
         )
         recycler.adapter = adapter
@@ -116,59 +160,38 @@ class CategoryDetailActivity : AppCompatActivity() {
 
     private fun performLocalSearch(query: String) {
         val lowerQuery = query.lowercase().trim()
-        val filtered = if (lowerQuery.isEmpty()) {
-            allPlaces
-        } else {
-            allPlaces.filter { place ->
-                place.name.lowercase().contains(lowerQuery) ||
-                        place.location.city.lowercase().contains(lowerQuery) ||
-                        place.location.country.lowercase().contains(lowerQuery)
-            }
+        val filtered = if (lowerQuery.isEmpty()) allPlaces else allPlaces.filter { place ->
+            place.name.lowercase().contains(lowerQuery) ||
+                    place.location.city.lowercase().contains(lowerQuery) ||
+                    place.location.country.lowercase().contains(lowerQuery)
         }
         updateAdapter(filtered)
         supportActionBar?.title = if (lowerQuery.isNotEmpty()) "Résultats : $query" else currentCategoryName
     }
 
-    private fun toggleFavorite(placeId: String, sharedPref: android.content.SharedPreferences) {
-        val favorites = sharedPref.getStringSet("favorites", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        if (favorites.contains(placeId)) {
-            favorites.remove(placeId)
-            Toast.makeText(this, "Retiré des favoris", Toast.LENGTH_SHORT).show()
-        } else {
-            favorites.add(placeId)
-            Toast.makeText(this, "Ajouté aux favoris", Toast.LENGTH_SHORT).show()
+    private fun toggleFavorite(placeId: String) {
+        if (userId.isEmpty()) {
+            Toast.makeText(this, "Connectez-vous pour gérer les favoris", Toast.LENGTH_SHORT).show()
+            return
         }
-        sharedPref.edit().putStringSet("favorites", favorites).apply()
-        // Recharger l'affichage pour mettre à jour l'icône
-        updateAdapter(allPlaces.filter { it.category == currentCategoryName })
-    }
-
-    private fun showPlaceDialog(place: Place) {
-        val dialogView = layoutInflater.inflate(R.layout.activity_place_detail, null)
-
-        dialogView.findViewById<TextView>(R.id.place_name).text = place.name
-        dialogView.findViewById<TextView>(R.id.place_description).text = place.details.description
-        dialogView.findViewById<TextView>(R.id.place_cost).text = "Coût : %.2f €".format(place.details.costEstimate.adult)
-        dialogView.findViewById<TextView>(R.id.place_effort).text = "Effort : ${place.details.effortLevel}/5"
-        dialogView.findViewById<TextView>(R.id.place_duration).text = "Durée : ${place.details.typicalDurationMinutes} min"
-        dialogView.findViewById<TextView>(R.id.place_address).text = "Adresse : ${place.location.address}"
-        val tagsText = if (place.details.tags.isNotEmpty()) "Tags : ${place.details.tags.joinToString(", ")}" else ""
-        dialogView.findViewById<TextView>(R.id.place_tags).text = tagsText
-
-        val imageView = dialogView.findViewById<ImageView>(R.id.place_image)
-        if (place.media.thumbnail.isNotBlank()) {
-            Glide.with(this).load(place.media.thumbnail).into(imageView)
-        } else {
-            imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+        val docRef = db.collection("favorites").document(userId)
+        docRef.get().addOnSuccessListener { doc ->
+            val currentList = (doc.get("placeIds") as? List<String>) ?: emptyList()
+            val newList = if (currentList.contains(placeId)) {
+                currentList - placeId
+            } else {
+                currentList + placeId
+            }
+            docRef.set(mapOf("placeIds" to newList))
+                .addOnSuccessListener {
+                    Toast.makeText(this, if (newList.contains(placeId)) "Ajouté" else "Retiré", Toast.LENGTH_SHORT).show()
+                    updateAdapter(allPlaces) // Rafraîchir
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this, "Erreur", Toast.LENGTH_SHORT).show()
+                }
         }
-
-        AlertDialog.Builder(this)
-            .setView(dialogView)
-            .setPositiveButton("Fermer", null)
-            .show()
     }
-
-    // ==================== AJOUT À UN PARCOURS EXISTANT ====================
 
     private fun showAddToItineraryDialog(placeId: String) {
         val uid = FirebaseAuth.getInstance().currentUser?.uid
@@ -221,5 +244,30 @@ class CategoryDetailActivity : AppCompatActivity() {
             .addOnFailureListener { e ->
                 Toast.makeText(this, "Erreur: ${e.message}", Toast.LENGTH_SHORT).show()
             }
+    }
+
+    private fun showPlaceDialog(place: Place) {
+        val dialogView = layoutInflater.inflate(R.layout.activity_place_detail, null)
+
+        dialogView.findViewById<TextView>(R.id.place_name).text = place.name
+        dialogView.findViewById<TextView>(R.id.place_description).text = place.details.description
+        dialogView.findViewById<TextView>(R.id.place_cost).text = "Coût : %.2f €".format(place.details.costEstimate.adult)
+        dialogView.findViewById<TextView>(R.id.place_effort).text = "Effort : ${place.details.effortLevel}/5"
+        dialogView.findViewById<TextView>(R.id.place_duration).text = "Durée : ${place.details.typicalDurationMinutes} min"
+        dialogView.findViewById<TextView>(R.id.place_address).text = "Adresse : ${place.location.address}"
+        val tagsText = if (place.details.tags.isNotEmpty()) "Tags : ${place.details.tags.joinToString(", ")}" else ""
+        dialogView.findViewById<TextView>(R.id.place_tags).text = tagsText
+
+        val imageView = dialogView.findViewById<ImageView>(R.id.place_image)
+        if (place.media.thumbnail.isNotBlank()) {
+            Glide.with(this).load(place.media.thumbnail).into(imageView)
+        } else {
+            imageView.setImageResource(android.R.drawable.ic_menu_gallery)
+        }
+
+        AlertDialog.Builder(this)
+            .setView(dialogView)
+            .setPositiveButton("Fermer", null)
+            .show()
     }
 }

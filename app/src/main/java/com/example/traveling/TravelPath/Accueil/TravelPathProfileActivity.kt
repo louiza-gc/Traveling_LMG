@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.traveling.R
 import com.example.traveling.TravelPath.Parcours.MyItinerariesActivity
 import com.example.traveling.TravelShare.Connection.login
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import de.hdodenhof.circleimageview.CircleImageView
@@ -34,7 +35,45 @@ class TravelPathProfileActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_travelpath_profile)
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_path_favorites -> {
+                    if (this !is FavoritesActivity) {
+                        Intent(this, FavoritesActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                R.id.menu_path_itineraries -> {
+                    if (this !is MyItinerariesActivity) {
+                        Intent(this, MyItinerariesActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                R.id.menu_path_profile -> true
+                R.id.menu_path_home -> {
+                    if (this !is AccueilPath) {
+                        Intent(this, AccueilPath::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
 
+        bottomNav.selectedItemId = when (this) {
+            is AccueilPath -> R.id.menu_path_home
+            is MyItinerariesActivity -> R.id.menu_path_itineraries
+            is FavoritesActivity -> R.id.menu_path_favorites
+            is TravelPathProfileActivity -> R.id.menu_path_profile
+            else -> R.id.menu_path_home
+        }
         auth = FirebaseAuth.getInstance()
         db = FirebaseFirestore.getInstance()
 
@@ -105,24 +144,25 @@ class TravelPathProfileActivity : AppCompatActivity() {
     }
 
     private fun loadStatistics(userId: String) {
-        // Compter les itinéraires créés par l'utilisateur
+        // Compter les itinéraires
         db.collection("itineraries")
             .whereEqualTo("createdBy", userId)
             .get()
             .addOnSuccessListener { result ->
                 tvItineraryCount.text = result.size().toString()
             }
-            .addOnFailureListener {
-                tvItineraryCount.text = "0"
+
+        // Compter les favoris depuis Firestore
+        db.collection("favorites").document(userId).get()
+            .addOnSuccessListener { doc ->
+                val favorites = (doc.get("placeIds") as? List<String>) ?: emptyList()
+                tvFavoritesCount.text = favorites.size.toString()
+                progressBar.visibility = View.GONE
             }
-
-        // Compter les favoris (stockés dans SharedPreferences avec préfixe userId)
-        val prefsName = "travelpath_${userId}"
-        val prefs = getSharedPreferences(prefsName, MODE_PRIVATE)
-        val favorites = prefs.getStringSet("favorites", emptySet()) ?: emptySet()
-        tvFavoritesCount.text = favorites.size.toString()
-
-        progressBar.visibility = View.GONE
+            .addOnFailureListener {
+                tvFavoritesCount.text = "0"
+                progressBar.visibility = View.GONE
+            }
     }
 
     private fun showMenu(view: View) {

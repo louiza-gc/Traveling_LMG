@@ -64,4 +64,6 @@ dependencies {
     androidTestImplementation("androidx.test.espresso:espresso-core:3.5.1")
     // Import the BoM for the Firebase platform
     implementation("com.google.mlkit:image-labeling:17.0.7")
- }
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
+
+}

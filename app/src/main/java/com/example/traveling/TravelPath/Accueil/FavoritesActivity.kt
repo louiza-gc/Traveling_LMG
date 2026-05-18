@@ -1,8 +1,7 @@
 package com.example.traveling.TravelPath.Accueil
 
-import android.content.SharedPreferences
+import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
@@ -14,6 +13,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.example.traveling.R
 import com.example.traveling.TravelPath.Parcours.Itinerary
+import com.example.traveling.TravelPath.Parcours.MyItinerariesActivity
+import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
@@ -21,17 +22,56 @@ import kotlinx.coroutines.launch
 class FavoritesActivity : AppCompatActivity() {
 
     private lateinit var recycler: RecyclerView
-    private lateinit var sharedPref: SharedPreferences
     private var userId: String = ""
+    private val db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_favorites)
-
-        // Récupérer l'utilisateur (soit depuis l'intent, soit via FirebaseAuth)
+        val bottomNav = findViewById<BottomNavigationView>(R.id.bottomNav)
+        bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.menu_path_home -> {
+                    if (this !is AccueilPath) {
+                        Intent(this, AccueilPath::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                R.id.menu_path_itineraries -> {
+                    if (this !is MyItinerariesActivity) {
+                        Intent(this, MyItinerariesActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                R.id.menu_path_favorites -> true
+                R.id.menu_path_profile -> {
+                    if (this !is TravelPathProfileActivity) {
+                        Intent(this, TravelPathProfileActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                        }.also { startActivity(it) }
+                    }
+                    true
+                }
+                else -> false
+            }
+        }
+        bottomNav.selectedItemId = when (this) {
+            is AccueilPath -> R.id.menu_path_home
+            is MyItinerariesActivity -> R.id.menu_path_itineraries
+            is FavoritesActivity -> R.id.menu_path_favorites
+            is TravelPathProfileActivity -> R.id.menu_path_profile
+            else -> R.id.menu_path_home
+        }
         userId = intent.getStringExtra("userId") ?: FirebaseAuth.getInstance().currentUser?.uid ?: ""
-        val prefsName = if (userId.isNotEmpty()) "travelpath_${userId}" else "travelpath_guest"
-        sharedPref = getSharedPreferences(prefsName, MODE_PRIVATE)
+        if (userId.isEmpty()) {
+            Toast.makeText(this, "Connectez-vous pour voir vos favoris", Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
 
         recycler = findViewById(R.id.recyclerFavorites)
         recycler.layoutManager = LinearLayoutManager(this)
@@ -40,57 +80,61 @@ class FavoritesActivity : AppCompatActivity() {
     }
 
     private fun loadFavorites() {
-        val favoriteIds = sharedPref.getStringSet("favorites", emptySet()) ?: emptySet()
-        if (favoriteIds.isEmpty()) {
-            Toast.makeText(this, "Aucun favori", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-
-        lifecycleScope.launch {
-            try {
-                PlaceRepository.init(applicationContext)
-                val allPlaces = PlaceRepository.loadAllPlaces()
-                val favoritePlaces = allPlaces.filter { it.id in favoriteIds }
-
-                val items = favoritePlaces.map { place ->
-                    Item(
-                        id = place.id,
-                        name = place.name,
-                        imageUrl = place.media.thumbnail,
-                        city = place.location.city,
-                        country = place.location.country,
-                        isFavorite = true   // cœur rempli (rouge)
-                    )
+        db.collection("favorites").document(userId).get()
+            .addOnSuccessListener { doc ->
+                val placeIds = (doc.get("placeIds") as? List<String>) ?: emptyList()
+                if (placeIds.isEmpty()) {
+                    Toast.makeText(this, "Aucun favori", Toast.LENGTH_SHORT).show()
+                    finish()
+                    return@addOnSuccessListener
                 }
-
-                val adapter = ItemAdapter(
-                    items = items,
-                    onItemClick = { clickedItem ->
-                        val place = favoritePlaces.find { it.id == clickedItem.id }
-                        place?.let { showPlaceDialog(it) }
-                    },
-                    onFavoriteClick = { item -> removeFavorite(item.id) },  // retirer des favoris
-                    onAddClick = { item -> showAddToItineraryDialog(item.id) }
-                )
-                recycler.adapter = adapter
-            } catch (e: Exception) {
-                Toast.makeText(this@FavoritesActivity, "Erreur de chargement", Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    val allPlaces = PlaceRepository.loadAllPlaces()
+                    val favoritePlaces = allPlaces.filter { it.id in placeIds }
+                    val items = favoritePlaces.map { place ->
+                        Item(
+                            id = place.id,
+                            name = place.name,
+                            imageUrl = place.media.thumbnail,
+                            city = place.location.city,
+                            country = place.location.country,
+                            isFavorite = true
+                        )
+                    }
+                    val adapter = ItemAdapter(
+                        items = items,
+                        onItemClick = { clickedItem ->
+                            favoritePlaces.find { it.id == clickedItem.id }?.let { showPlaceDialog(it) }
+                        },
+                        onFavoriteClick = { item -> removeFavorite(item.id) },
+                        onAddClick = { item -> showAddToItineraryDialog(item.id) }
+                    )
+                    recycler.adapter = adapter
+                }
             }
-        }
-        Log.d("FAVORI", "userId récupéré = $userId, prefsName = travelpath_${userId}")
-        Log.d("FAVORI", "Contenu favorites : ${sharedPref.getStringSet("favorites", emptySet())}")
+            .addOnFailureListener {
+                Toast.makeText(this, "Erreur de chargement", Toast.LENGTH_SHORT).show()
+                finish()
+            }
     }
 
-    // Retirer un lieu des favoris
     private fun removeFavorite(placeId: String) {
-        val favorites = sharedPref.getStringSet("favorites", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        if (favorites.remove(placeId)) {
-            sharedPref.edit().putStringSet("favorites", favorites).apply()
-            Toast.makeText(this, "Retiré des favoris", Toast.LENGTH_SHORT).show()
-            loadFavorites()  // rafraîchir la liste
+        val docRef = db.collection("favorites").document(userId)
+        docRef.get().addOnSuccessListener { doc ->
+            val currentList = (doc.get("placeIds") as? List<String>) ?: emptyList()
+            val newList = currentList - placeId
+            docRef.set(mapOf("placeIds" to newList))
+                .addOnSuccessListener {
+                    Toast.makeText(this, "Retiré des favoris", Toast.LENGTH_SHORT).show()
+                    loadFavorites() // recharger la liste
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this, "Erreur", Toast.LENGTH_SHORT).show()
+                }
         }
     }
+
+
 
     // Afficher les détails d'un lieu (popup)
     private fun showPlaceDialog(place: Place) {

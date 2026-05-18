@@ -6,7 +6,6 @@
     android:layout_height="match_parent"
     android:background="#F4F6F8">
 
-    <!-- AppBar avec bouton menu -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -29,6 +28,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"/>
 
             <TextView
+                android:id="@+id/title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="Mon profil"
@@ -44,7 +44,6 @@
 
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Contenu scrollable -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -56,13 +55,12 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Bloc avatar + infos -->
+            <!-- Bloc avatar -->
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_profile_card"
-                android:padding="16dp"
-                app:cardCornerRadius="16dp">
+                android:padding="16dp">
 
                 <de.hdodenhof.circleimageview.CircleImageView
                     android:id="@+id/ivAvatar"
@@ -180,7 +178,6 @@
 
             </LinearLayout>
 
-            <!-- Message de chargement -->
             <ProgressBar
                 android:id="@+id/progressBar"
                 android:layout_width="wrap_content"
@@ -192,5 +189,15 @@
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Navigation – fixe en bas -->
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/bottomNav"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_gravity="bottom"
+        app:menu="@menu/botton_nav_menu_path"
+        app:itemIconTint="@color/bottom_nav_color"
+        app:itemTextColor="@color/bottom_nav_color" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

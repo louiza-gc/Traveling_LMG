@@ -1,7 +1,6 @@
 package com.example.traveling.TravelPath.Accueil
 
 import android.content.Intent
-import android.content.SharedPreferences
 import android.os.Bundle
 import android.util.Log
 import android.widget.EditText
@@ -31,60 +30,46 @@ class AccueilPath : AppCompatActivity() {
     private lateinit var searchBar: EditText
     private lateinit var fabGenerate: FloatingActionButton
     private lateinit var bottomNav: BottomNavigationView
-    private lateinit var sharedPref: SharedPreferences
-    private var userId: String = ""
 
     private val gridLayoutManager = GridLayoutManager(this, 2)
     private val listLayoutManager = LinearLayoutManager(this)
 
     private var allPlaces: List<Place> = emptyList()
     private var isSearchMode = false
+    private var userId: String = ""
+    private val db = FirebaseFirestore.getInstance()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_accueil_path)
 
-        // Récupération de l'identifiant utilisateur (transmis par Login)
-        userId = intent.getStringExtra("userId") ?: ""
-        val prefsName = if (userId.isNotEmpty()) "travelpath_${userId}" else "travelpath_guest"
-        sharedPref = getSharedPreferences(prefsName, MODE_PRIVATE)
+        userId = intent.getStringExtra("userId") ?: FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
         recycler = findViewById(R.id.recyclerCategories)
         searchBar = findViewById(R.id.search)
         fabGenerate = findViewById(R.id.fab_generate_home)
         bottomNav = findViewById(R.id.bottomNav)
 
-        // Affichage initial des catégories
         showCategories()
 
-        // Bouton flottant pour créer un parcours (manuel ou automatique)
         fabGenerate.setOnClickListener {
             val options = arrayOf("Parcours personnalisé", "Parcours automatique")
             AlertDialog.Builder(this)
                 .setTitle("Créer un parcours")
                 .setItems(options) { _, which ->
                     when (which) {
-                        0 -> {
-                            // Parcours personnalisé : l'utilisateur sélectionne lui-même les lieux
-                            startActivity(Intent(this, CreateItineraryActivity::class.java))
-                        }
-                        1 -> {
-                            // Parcours automatique : on demande d'abord le nom et la ville
-                            startActivity(Intent(this, AutoItineraryActivity::class.java))
-                        }
+                        0 -> startActivity(Intent(this, CreateItineraryActivity::class.java))
+                        1 -> startActivity(Intent(this, AutoItineraryActivity::class.java))
                     }
                 }
                 .show()
         }
 
-        // Bottom navigation
         bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.menu_path_home -> true
                 R.id.menu_path_itineraries -> {
-                    val intent = Intent(this, MyItinerariesActivity::class.java)
-                    intent.putExtra("userId", userId)
-                    startActivity(intent)
+                    startActivity(Intent(this, MyItinerariesActivity::class.java))
                     true
                 }
                 R.id.menu_path_favorites -> {
@@ -94,14 +79,20 @@ class AccueilPath : AppCompatActivity() {
                     true
                 }
                 R.id.menu_path_profile -> {
-                    startActivity(Intent(this, com.example.traveling.TravelPath.Accueil.TravelPathProfileActivity::class.java))
+                    startActivity(Intent(this, TravelPathProfileActivity::class.java))
                     true
                 }
                 else -> false
             }
         }
+        bottomNav.selectedItemId = when (this) {
+            is AccueilPath -> R.id.menu_path_home
+            is MyItinerariesActivity -> R.id.menu_path_itineraries
+            is FavoritesActivity -> R.id.menu_path_favorites
+            is TravelPathProfileActivity -> R.id.menu_path_profile
+            else -> R.id.menu_path_home
+        }
 
-        // Recherche en temps réel
         searchBar.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
@@ -110,7 +101,6 @@ class AccueilPath : AppCompatActivity() {
             override fun afterTextChanged(s: android.text.Editable?) {}
         })
 
-        // Chargement des lieux depuis le JSON
         lifecycleScope.launch {
             PlaceRepository.init(applicationContext)
             allPlaces = PlaceRepository.loadAllPlaces()
@@ -148,7 +138,21 @@ class AccueilPath : AppCompatActivity() {
             recycler.layoutManager = listLayoutManager
         }
 
-        val favoritesSet = sharedPref.getStringSet("favorites", emptySet()) ?: emptySet()
+        if (userId.isEmpty()) {
+            updateResults(results, emptySet())
+        } else {
+            db.collection("favorites").document(userId).get()
+                .addOnSuccessListener { doc ->
+                    val favorites = (doc.get("placeIds") as? List<String>) ?: emptyList()
+                    updateResults(results, favorites.toSet())
+                }
+                .addOnFailureListener {
+                    updateResults(results, emptySet())
+                }
+        }
+    }
+
+    private fun updateResults(results: List<Place>, favoritesSet: Set<String>) {
         val items = results.map { place ->
             Item(
                 id = place.id,
@@ -166,28 +170,36 @@ class AccueilPath : AppCompatActivity() {
                 val place = results.find { it.id == clickedItem.id }
                 place?.let { showPlaceDialog(it) }
             },
-            onFavoriteClick = { item -> toggleFavorite(item.id);
-                Log.d("FAVORI", "userId = $userId, prefsName = travelpath_${userId}") },
+            onFavoriteClick = { item -> toggleFavorite(item.id) },
             onAddClick = { item -> showAddToItineraryDialog(item.id) }
         )
         if (items.isEmpty()) {
-            Toast.makeText(this, "Aucun résultat pour \"$query\"", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Aucun résultat pour \"${searchBar.text}\"", Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun toggleFavorite(placeId: String) {
-        val favorites = sharedPref.getStringSet("favorites", mutableSetOf())?.toMutableSet() ?: mutableSetOf()
-        if (favorites.contains(placeId)) {
-            favorites.remove(placeId)
-            Toast.makeText(this, "Retiré des favoris", Toast.LENGTH_SHORT).show()
-        } else {
-            favorites.add(placeId)
-            Toast.makeText(this, "Ajouté aux favoris", Toast.LENGTH_SHORT).show()
+        if (userId.isEmpty()) {
+            Toast.makeText(this, "Connectez-vous pour gérer les favoris", Toast.LENGTH_SHORT).show()
+            return
         }
-        sharedPref.edit().putStringSet("favorites", favorites).apply()
-
-        // Rafraîchir la recherche actuelle pour mettre à jour l'icône
-        performSearch(searchBar.text.toString())
+        val docRef = db.collection("favorites").document(userId)
+        docRef.get().addOnSuccessListener { doc ->
+            val currentList = (doc.get("placeIds") as? List<String>) ?: emptyList()
+            val newList = if (currentList.contains(placeId)) {
+                currentList - placeId
+            } else {
+                currentList + placeId
+            }
+            docRef.set(mapOf("placeIds" to newList))
+                .addOnSuccessListener {
+                    Toast.makeText(this, if (newList.contains(placeId)) "Ajouté aux favoris" else "Retiré des favoris", Toast.LENGTH_SHORT).show()
+                    performSearch(searchBar.text.toString()) // Rafraîchir l'affichage
+                }
+                .addOnFailureListener {
+                    Toast.makeText(this, "Erreur de mise à jour", Toast.LENGTH_SHORT).show()
+                }
+        }
     }
 
     private fun showAddToItineraryDialog(placeId: String) {
